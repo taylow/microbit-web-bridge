@@ -1,0 +1,39 @@
+extends layout
+block head
+  script(src="https://code.jquery.com/jquery-3.3.1.min.js",
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=",
+  crossorigin="anonymous")
+
+block content
+
+  h1= title
+
+  div.content
+    //div#usb
+    div#microbit
+      div#led-container
+
+  div#terminal-container
+    input(type="checkbox")#terminal-checkbox
+    label(for="terminal-checkbox")#terminal-toggle &#9776;
+    div#terminal-box
+      div#terminal-header Terminal
+    div#terminal-contents
+
+  div#history-container
+    input(type="checkbox")#history-checkbox
+    label(for="history-checkbox")#history-toggle &#9776;
+    div#history-box
+      div#history-header History
+
+  div#status
+    text Connect to a micro:bit and flash the bridging software
+
+  dif#footer
+    div#controls
+      button#connect Connect
+      button#flash Flash micro:bit
+
+  //script var exports = {}; // hack to bypass typescript > js conversion error
+  script(type="module", src="javascripts/sidebars.js")
+  script(type="module", src="javascripts/WebBridge.bundle.js")

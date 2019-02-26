@@ -1,0 +1,46 @@
+{
+  "name": "microbit-web-bridge",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "@types/jquery": "^3.3.29",
+    "cookie-parser": "^1.4.4",
+    "dapjs": "github:ARMmbed/dapjs#gh-pages",
+    "debug": "~2.6.9",
+    "del": "^3.0.0",
+    "express": "~4.16.0",
+    "gulp-sourcemaps": "^2.6.4",
+    "gulp-tslint": "^8.1.3",
+    "gulp-typedoc": "^2.2.2",
+    "gulp-typescript": "^5.0.0",
+    "http-errors": "~1.6.2",
+    "jquery": "^3.3.1",
+    "merge2": "^1.2.3",
+    "morgan": "~1.9.0",
+    "node-hid": "^0.7.7",
+    "progress": "^2.0.3",
+    "pug": "2.0.0-beta11",
+    "request": "^2.88.0",
+    "slip": "^1.0.2",
+    "timers-browserify": "^2.0.10",
+    "tslint": "^5.12.1",
+    "tslint-eslint-rules": "^5.4.0",
+    "typed-web-workers": "^2.1.1",
+    "typedoc": "^0.14.2",
+    "typescript": "^3.3.3",
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0",
+    "watchify": "^3.11.0",
+    "webusb": "^1.1.1",
+    "webworker": "^0.8.4",
+    "worker-nodes": "^1.6.1"
+  },
+  "devDependencies": {
+    "@types/w3c-web-usb": "^1.0.3",
+    "commonjs": "0.0.1",
+    "gulp": "^4.0.0"
+  }
+}

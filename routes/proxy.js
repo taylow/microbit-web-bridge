@@ -5,9 +5,11 @@ const fs = require('fs');
 const router = express.Router();
 const translations = JSON.parse(fs.readFileSync('translations.json', 'utf8'));
 
-/* GET users listing. */
+/***
+ * Handle GET requests made through the proxy
+ */
 router.get('/GET/', (req, res) => {
-  //TODO: check if base URL matches the ones found in translations
+  //TODO: check if base URL matches the ones found in translations to prevent proxying unfiltered traffic
   request(decodeURIComponent(req.query.url), function (error, response, body) {
     if (!error && response.statusCode === 200) {
       res.send(body); // Print the google web page.
@@ -17,8 +19,10 @@ router.get('/GET/', (req, res) => {
   });
 });
 
-/* GET users listing. */
-router.post('/POST', (req, res) => {
+/***
+ * Handle POST requests made through the proxy.
+ */
+router.post('/POST/', (req, res) => {
   //TODO: add an elegant way of extracting all headers, currently only works for EiS API
   request({
     headers: {
@@ -32,17 +36,11 @@ router.post('/POST', (req, res) => {
   },(err, body) => {
     res.json(body);
   });
-
-  //req.pipe(request.post(req.query.url, {json: true, body: req.body, headers: req.headers}), {end: false}).pipe(res);
-
-  //res.send('POST REQUEST ' + req.query.url);
-  //res.redirect(307, decodeURIComponent(req.query.url));
-  /*request(decodeURIComponent(req.query.url), {headers:req.headers, body: req.body}, (error, response, body) => {
-    //res.send(body);
-  });*/
 });
 
-/* Default */
+/***
+ * Default
+ */
 router.get('/', (req, res) => {
   res.send("Use /GET or /POST to proxy a GET or POST request");
 });

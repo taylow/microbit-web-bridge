@@ -4,7 +4,9 @@ const router = express.Router();
 
 const translations = JSON.parse(fs.readFileSync('translations.json', 'utf8'));
 
-/* GET users listing. */
+/***
+ * Handle GET requests to serve translations.json file.
+ */
 router.get('/', (req, res) => {
   res.send(translations);
 });

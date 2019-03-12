@@ -1,14 +1,14 @@
 import {Packet} from "./Packet";
 import {debug, DebugType} from "./Debug";
 
-export const enum SubType {
+export enum SubType {
     SUBTYPE_STRING = 0x01,
     SUBTYPE_INT = 0x02,
     SUBTYPE_FLOAT = 0x04,
     SUBTYPE_EVENT = 0x08
 }
 
-export const enum RequestType {
+export enum RequestType {
     REQUEST_TYPE_GET_REQUEST = 0x01,
     REQUEST_TYPE_POST_REQUEST = 0x02,
     REQUEST_TYPE_CLOUD_VARIABLE = 0x04,
@@ -16,13 +16,13 @@ export const enum RequestType {
     REQUEST_TYPE_HELLO = 0x10
 }
 
-export const enum RequestStatus {
+export enum RequestStatus {
     REQUEST_STATUS_ACK = 0x20,
     REQUEST_STATUS_ERROR = 0x40,
     REQUEST_STATUS_OK = 0x80
 }
 
-export const enum SlipChar {
+export enum SlipChar {
     SLIP_END = 0xC0,
     SLIP_ESC = 0xDB,
     SLIP_ESC_END = 0xDC,
@@ -94,9 +94,18 @@ export class SerialPacket implements Packet {
     }
 
     /***
-     * Converts values found in the payload into a byte array ready for sending to the micro:bit.
+     * Returns the non-formatted payload in array form.
      */
-    public getPayload(): number[] {
+    public getPayload(): any[] {
+        return this.payload;
+    }
+
+    /***
+     * Converts values found in the payload into a byte array ready for sending to the micro:bit.
+     *
+     * @returns The SerialPacket's payload in byte array form
+     */
+    public getFormattedPayload(): number[] {
         let formattedPayload: any = [];
 
         // format the payload data correctly
@@ -139,10 +148,56 @@ export class SerialPacket implements Packet {
 
     /***
      * Returns a formatted packet in byte array form.
+     *
+     * Byte  |   Use
+     * -------------------------
+     * 0     | Unused, always 0
+     * 1     | app_id
+     * 2     | namespace_id
+     * 3     | uid
+     * 4     | request_type
+     * 5 - n | payload contiguously stored
+     * n + 1 | SLIP_END (192)
      */
     public getFormattedPacket(): number[] {
-        //TODO: Process the packet correctly and correctly implement SLIP
-        return [0].concat(this.getHeader().concat(this.getPayload())).concat([SlipChar.SLIP_END]);
+        return [0].concat(this.getHeader().concat(this.getFormattedPayload())).concat([SlipChar.SLIP_END]);
+    }
+
+    /***
+     * Sets a bit in the request_type header byte.
+     * @param bitValue The bit to set
+     */
+    public setRequestBit(bitValue: number) {
+        this.request_type |= bitValue;
+    }
+
+    /***
+     * Clears a given bit in the request_type header byte.
+     * @param bitValue The bit to clear
+     */
+    public clearRequestBit(bitValue: number) {
+        this.request_type &= ~bitValue;
+    }
+
+
+    /***
+     * Modifies the SerialPacket to return an error status by clearing any previously set status flags
+     * while retaining the request type (e.g. REST, hello, etc.)
+     */
+    public clearAndError(errorMessage?: string): SerialPacket {
+        // clear all other status codes
+        for(let status in RequestStatus) {
+            this.clearRequestBit(Number(status));
+        }
+
+        // set status code to REQUEST_STATUS_ERROR
+        this.setRequestBit(RequestStatus.REQUEST_STATUS_ERROR);
+
+        // clear payload and add an error message if necessary
+        this.clear();
+        if(errorMessage.length > 0)
+            this.append(errorMessage);
+        return this;
     }
 
     /***
@@ -240,7 +295,7 @@ export class SerialPacket implements Packet {
                 if(str.charCodeAt(str.length - 1) === 0)
                     str = str.substr(0,str.length - 1);
 
-                debug(`String found: ${str}`, DebugType.DEBUG);
+                // debug(`String found: ${str}`, DebugType.DEBUG);
                 return str;
 
             case SubType.SUBTYPE_INT:
@@ -249,7 +304,7 @@ export class SerialPacket implements Packet {
                     view.setUint8(i, b);
                 });
                 let int = view.getInt32(0);
-                debug(`Int found: ${int}`, DebugType.DEBUG);
+                // debug(`Int found: ${int}`, DebugType.DEBUG);
                 return int;
 
             case SubType.SUBTYPE_FLOAT:
@@ -258,7 +313,7 @@ export class SerialPacket implements Packet {
                     view.setUint8(i, b);
                 });
                 let float = view.getFloat32(0);
-                debug(`Float found: ${float}`, DebugType.DEBUG);
+                // debug(`Float found: ${float}`, DebugType.DEBUG);
                 return float;
 
             case SubType.SUBTYPE_EVENT:

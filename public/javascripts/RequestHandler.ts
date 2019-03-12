@@ -1,48 +1,178 @@
+import * as jspath from "jspath";
 import {RequestStatus, RequestType, SerialPacket} from "./SerialPacket";
 import {debug, DebugType} from "./Debug";
-import * as $ from "jquery";
-
-const proxyURL = "http://localhost:3000/proxy/";
+import axios, {AxiosRequestConfig} from "axios";
 
 export class RequestHandler {
-    private translations;
-    private hub_variables;
+    private readonly translations;
+    private readonly hub_variables;
 
-    constructor(translations: {}, hub_variables: {}) {
-        this.translations = translations;
+    constructor(hub_variables: {}) {
+        this.translations = hub_variables["translations"]["json"]; // grab the translations part for easier access
         this.hub_variables = hub_variables;
     }
 
     /***
-     * Takes a JSON object and a key and recursively searches through the JSON until
-     * the key is located.
+     * Handles all requests and forwards the calls onto the correct handler based on the request type.
      *
-     * Note: Code snippet from https://gist.github.com/shakhal/3cf5402fc61484d58c8d
-     *
-     * @param obj The JSON object being searched
-     * @param key The key to recursively searched for
+     * @param serialPacket Incoming serial packet (ALL REQUESTS)
      */
-    public findValuesHelper(obj: any, key: any): any {
-        let list = [ ];
-        if (!obj) return list;
-        if (obj instanceof Array) {
-            for (var i in obj) {
-                list = list.concat(this.findValuesHelper(obj[i], key));
-            }
-            return list;
-        }
-        if (obj[key]) list.push(obj[key]);
+    public async handleRequest(serialPacket: SerialPacket): Promise<SerialPacket> {
+        // if HELLO packet
+        if (serialPacket.request_type & RequestType.REQUEST_TYPE_HELLO) {
+            return this.handleHelloPacket(serialPacket);
 
-        if ((typeof obj == "object") && (obj !== null)) {
-            let children = Object.keys(obj);
-            if (children.length > 0) {
-                for (let i = 0; i < children.length; i++) {
-                    list = list.concat(this.findValuesHelper(obj[children[i]], key));
+            // if a REST request
+        } else if (serialPacket.getReqRes() & (RequestType.REQUEST_TYPE_GET_REQUEST | RequestType.REQUEST_TYPE_POST_REQUEST)) {
+            return this.handleRESTRequest(serialPacket);
+
+            // if a CLOUD variable
+        } else if (serialPacket.getReqRes() & RequestType.REQUEST_TYPE_CLOUD_VARIABLE) {
+            return this.handleCloudVariable(serialPacket);
+
+            // if a BROADCAST request
+        } else if (serialPacket.getReqRes() & RequestType.REQUEST_TYPE_BROADCAST) {
+            return this.handleBroadcast(serialPacket);
+        }
+
+        // if any other request type was found, reject it as unrecognised
+        return new Promise((resolve, reject) => {
+            reject(`Unrecognised packet type (${serialPacket.getReqRes()})`);
+        });
+    }
+
+    /***
+     * Processes the REST request coming from the micro:bit and returns a response packet to be sent to the micro:bit.
+     *
+     * @param serialPacket Incoming serial packet (REST Request)
+     * @param responsePacket The response packet to modify
+     * @param translation A section of the Translations.json relevant to this request
+     * @param requestType The type of request (GET/POST)
+     */
+
+    /*    private processRESTRequestTranslation(serialPacket: SerialPacket, responsePacket: SerialPacket, translation: any[], requestType: string): SerialPacket {
+            debug("Processing REST request", DebugType.DEBUG);
+
+            // console.log(translation);
+
+            // gets the format for the micro:bit query string
+            let mbQueryString = translation[requestType]["microbitQueryString"]; // get microbitQueryString from translation
+            // console.log(mbQueryString);
+
+            // maps the query string coming from the micro:bit to the translated format
+            let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
+            // console.log(queryStrMap);
+
+            // gets the baseURL for the specified service
+            let baseURL = translation[requestType]["baseURL"];
+            // console.log(baseURL);
+
+            // gets the endpoint json
+            let endpoint = translation[requestType]["endpoint"][queryStrMap["endpoint"]];
+            //console.log(endpoint);
+
+            // gets the queryObject for the specified endpoint
+            let queryObject = endpoint["queryObject"];
+            // if there was no query object, set it to blank
+            if(queryObject == null) queryObject = [];
+            // console.log(queryObject);
+
+            // regex for finding url parts (e.g. api_endpoint, etc)
+            let urlPart;
+            let regexp = new RegExp("%([^%]*)%", "g");//"(?=\\w*%)%*\\w+%*");
+            let newURL = baseURL;
+
+            // loop through the URL and replace any % surrounded url parts with their queryObject counterparts
+            while((urlPart = regexp.exec(baseURL)) !== null) {
+                // grab the default parameter from the URL
+                let sectionParts = urlPart[1].split("?=");
+
+                if(sectionParts[0] in queryObject) {
+                    // if there is a queryObject part, replace it with the value
+                    newURL = newURL.replace(urlPart[0], queryObject[sectionParts[0]]);
+                } else if(sectionParts.length > 1) {
+                    // if there is a default, set it to it
+                    newURL = newURL.replace(urlPart[0], sectionParts[1]);
+                } else {
+                    // if none of the above, replace with nothing
+                    newURL = newURL.replace(urlPart[0], "");
                 }
             }
-        }
-        return list;
-    }
+
+            //console.log(newURL);
+
+            /!*let unit = translation[requestType]["unit"][queryStrMap["unit"]];
+            console.log(unit);*!/
+
+            // TODO: This is very temporary to provide data sharing to LGGS
+            switch(queryStrMap["service"]) {
+                case "share":
+                    console.log("SHARE");
+
+                    if(queryStrMap["endpoint"] == "historicalData") {
+                        responsePacket.append("DATA SENT");
+                        responsePacket.request_type |= RequestStatus.REQUEST_STATUS_OK;
+
+                        let jsonData = {
+                            "namespace": serialPacket.get(3),
+                            "name": serialPacket.get(2),
+                            "type": 0,
+                            "unit": serialPacket.get(4),
+                            "value": Number(serialPacket.get(1))
+                        };
+
+                        let headers = {"school-id": this.hub_variables["credentials"]["school_id"], "pi-id": this.hub_variables["credentials"]["pi_id"]};
+                        baseURL = translation[requestType]["extraURL"];
+
+                        $.ajax({
+                            type: "POST",
+                            dataType: "json",
+                            url: `${this.hub_variables["proxy"]["address"]}POST/?url=${baseURL}`,
+                            data: jsonData,
+                            headers: headers,
+                            success: function(data, body, error){
+                                // console.log("RESPONSE");
+                                // console.log(data);
+                                // console.log(body);
+                                // console.log(error);
+                            }
+                        });
+                    } else {
+                        console.log("NON-HISTORICAL DATA UNIMPLIMENTED");
+                        responsePacket.append("Error");
+                        responsePacket.request_type |= RequestStatus.REQUEST_STATUS_ERROR; // return error
+                    }
+                    return responsePacket;
+
+                case "init":
+                case "iot":
+                case "energy":
+                case "energyMeter":
+                case "weather":
+                case "carbon":
+                case "iss":
+                    console.log(queryStrMap["service"]);
+                    //responsePacket.append(queryStrMap["service"]);
+                    break;
+
+                default:
+                    console.log("UNKNOWN ENDPOINT");
+                    responsePacket.append("Error");
+                    responsePacket.request_type |= RequestStatus.REQUEST_STATUS_ERROR; // return error
+                    return responsePacket;
+            }
+
+            let responseJSON = this.processGETRequest(newURL);
+            let result = this.findValuesHelper(responseJSON, endpoint["returns"]);
+
+            //console.log(responseJSON);
+            //console.log(endpoint["returns"]);
+            //console.log(result);
+            responsePacket.append(result);
+
+            responsePacket.request_type |= RequestStatus.REQUEST_STATUS_OK; // return success
+            return responsePacket;
+        }*/
 
     /***
      * Maps a micro:bit query string to a defined query string format and returns
@@ -55,28 +185,28 @@ export class RequestHandler {
         let formatPieces = queryStringFormat.split('/').filter(x => x);
         let queryPieces = queryString.split('/').filter(x => x);
         let root = queryPieces[0];
-        let regexp = new RegExp("%(.*)%");
+        let regexp = new RegExp("%(.*)%"); // regex that will find all %strings%
         let out = [];
 
-        out['service'] = root;
+        out['service'] = root; // set the service we are using to the first element (e.g. carbon, share, etc.)
         queryPieces.shift(); // shift pieces over after getting root
-        root = queryPieces[0];
+        root = queryPieces[0]; // get first piece
 
         // loop through the pieces in the query format (split by /)
-        for(let format of formatPieces) {
+        for (let format of formatPieces) {
             let name = regexp.exec(format);
             let key = name[1];
 
             // if it is an optional attribute
-            if(key[key.length-1] == '?') {
+            if (key[key.length - 1] == '?') {
                 if (root == "")
                     break;
 
-                key = key.substr(0, key.length-1); // remove the ? from the attribute name
+                key = key.substr(0, key.length - 1); // remove the ? from the attribute name
             }
             out[key] = root; // set the key and value in the output list
 
-            if(queryPieces.length == 0) {
+            if (queryPieces.length == 0) {
                 root = "";
                 continue;
             }
@@ -87,173 +217,119 @@ export class RequestHandler {
         return out;
     }
 
-    /***
-     * Processes the REST request coming from the micro:bit and returns a response packet to be sent to the micro:bit.
-     *
-     * @param serialPacket Incoming serial packet (REST Request)
-     * @param responsePacket The response packet to modify
-     * @param translation A section of the Translations.json relevant to this request
-     * @param requestType The type of request (GET/POST)
-     */
-    private processRESTRequest(serialPacket: SerialPacket, responsePacket: SerialPacket, translation: any[], requestType: string): SerialPacket {
-        debug("Processing REST request", DebugType.DEBUG);
+    private processRESTRequest(serialPacket: SerialPacket, responsePacket: SerialPacket, translation: any[], requestType: string): Promise<SerialPacket> {
+        return new Promise((resolve, reject) => {
+            console.log(translation);
 
-        // console.log(translation);
+            // gets the format for the micro:bit query string
+            let mbQueryString = translation[requestType]["microbitQueryString"]; // get microbitQueryString from translation
+            console.log(mbQueryString);
 
-        // gets the format for the micro:bit query string
-        let mbQueryString = translation[requestType]["microbitQueryString"]; // get microbitQueryString from translation
-        // console.log(mbQueryString);
+            // maps the query string coming from the micro:bit to the translated format
+            let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
+            console.log(queryStrMap);
 
-        // maps the query string coming from the micro:bit to the translated format
-        let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
-        // console.log(queryStrMap);
+            // gets the baseURL for the specified service
+            let baseURL = translation[requestType]["baseURL"];
+            console.log(baseURL);
 
-        // gets the baseURL for the specified service
-        let baseURL = translation[requestType]["baseURL"];
-        // console.log(baseURL);
+            // gets the endpoint json
+            let endpoint = translation[requestType]["endpoint"][queryStrMap["endpoint"]];
+            console.log(endpoint);
 
-        // gets the endpoint json
-        let endpoint = translation[requestType]["endpoint"][queryStrMap["endpoint"]];
-        //console.log(endpoint);
+            // gets the queryObject for the specified endpoint
+            let queryObject = endpoint["queryObject"];
+            // if there was no query object, set it to blank
+            if (queryObject == null) queryObject = [];
+            console.log(queryObject);
 
-        // gets the queryObject for the specified endpoint
-        let queryObject = endpoint["queryObject"];
-        // if there was no query object, set it to blank
-        if(queryObject == null) queryObject = [];
-        // console.log(queryObject);
+            // regex for finding url parts (e.g. api_endpoint, etc)
+            let urlPart;
+            let regexp = new RegExp("%([^%]*)%", "g");//"(?=\\w*%)%*\\w+%*");
+            let newURL = baseURL;
 
-        // regex for finding url parts (e.g. api_endpoint, etc)
-        let urlPart;
-        let regexp = new RegExp("%([^%]*)%", "g");//"(?=\\w*%)%*\\w+%*");
-        let newURL = baseURL;
+            // loop through the URL and replace any % surrounded url parts with their queryObject counterparts
+            while ((urlPart = regexp.exec(baseURL)) !== null) {
+                // grab the default parameter from the URL
+                let sectionParts = urlPart[1].split("?=");
 
-        // loop through the URL and replace any % surrounded url parts with their queryObject counterparts
-        while((urlPart = regexp.exec(baseURL)) !== null) {
-            // grab the default parameter from the URL
-            let sectionParts = urlPart[1].split("?=");
-
-            if(sectionParts[0] in queryObject) {
-                // if there is a queryObject part, replace it with the value
-                newURL = newURL.replace(urlPart[0], queryObject[sectionParts[0]]);
-            } else if(sectionParts.length > 1) {
-                // if there is a default, set it to it
-                newURL = newURL.replace(urlPart[0], sectionParts[1]);
-            } else {
-                // if none of the above, replace with nothing
-                newURL = newURL.replace(urlPart[0], "");
-            }
-        }
-
-        console.log(newURL);
-
-        /*let unit = translation[requestType]["unit"][queryStrMap["unit"]];
-        console.log(unit);*/
-
-        // TODO: This is very temporary to provide data sharing to LGGS
-        switch(queryStrMap["service"]) {
-            case "share":
-                console.log("SHARE");
-
-                if(queryStrMap["endpoint"] == "historicalData") {
-                    responsePacket.append("DATA SENT");
-                    responsePacket.request_type |= RequestStatus.REQUEST_STATUS_OK;
-
-                    let jsonData = {
-                        "namespace": serialPacket.get(3),
-                        "name": serialPacket.get(2),
-                        "type": 0,
-                        "unit": serialPacket.get(4),
-                        "value": Number(serialPacket.get(1))
-                    };
-
-                    let headers = {"school-id": this.hub_variables["credentials"]["school_id"], "pi-id": this.hub_variables["credentials"]["pi_id"]};
-                    baseURL = translation[requestType]["extraURL"];
-
-                    $.ajax({
-                        type: "POST",
-                        dataType: "json",
-                        url: `${proxyURL}POST/?url=${baseURL}`,
-                        data: jsonData,
-                        headers: headers,
-                        success: function(data, body, error){
-                            console.log("RESPONSE");
-                            console.log(data);
-                            console.log(body);
-                            console.log(error);
-                        }
-                    });
+                if (sectionParts[0] in queryObject) {
+                    // if there is a queryObject part, replace it with the value
+                    newURL = newURL.replace(urlPart[0], queryObject[sectionParts[0]]);
+                } else if (sectionParts.length > 1) {
+                    // if there is a default, set it to it
+                    newURL = newURL.replace(urlPart[0], sectionParts[1]);
                 } else {
-                    console.log("NON-HISTORICAL DATA UNIMPLIMENTED");
-                    responsePacket.append("Error");
-                    responsePacket.request_type |= RequestStatus.REQUEST_STATUS_ERROR; // return error
+                    // if none of the above, replace with nothing
+                    newURL = newURL.replace(urlPart[0], "");
                 }
-                return responsePacket;
-
-            case "init":
-            case "iot":
-            case "energy":
-            case "energyMeter":
-            case "weather":
-            case "carbon":
-            case "iss":
-                console.log(queryStrMap["service"]);
-                //responsePacket.append(queryStrMap["service"]);
-                break;
-
-            default:
-                console.log("UNKNOWN ENDPOINT");
-                responsePacket.append("Error");
-                responsePacket.request_type |= RequestStatus.REQUEST_STATUS_ERROR; // return error
-                return responsePacket;
-        }
-
-        let responseJSON = this.processGETRequest(newURL);
-        let result = this.findValuesHelper(responseJSON, endpoint["returns"]);
-
-        console.log(responseJSON);
-        console.log(endpoint["returns"]);
-        console.log(result);
-        responsePacket.append(result);
-
-        //TODO: Decide where the AJAX request is processed (Web Workers?)
-        /*$.ajax({
-            type: requestType,
-            dataType: "json",
-            url: "http://localhost:3000/proxy/" + requestType + "/?url=" + baseURL + endpoint["translation"],
-            success: function(data){
-                console.log(data);
-                let index = String(data["data"][0]["intensity"]["actual"]);
-                console.log(index);
-                responsePacket.request_type |= RequestStatus.REQUEST_STATUS_OK; // return success
-                return responsePacket;
-                //sendPacket(packet["header"]["app_id"], packet["header"]["namespace_id"], packet["header"]["uid"], REQUEST_STATUS_OK, REQUEST_TYPE_GET_REQUEST, [index]);
             }
-        });*/
 
-        responsePacket.request_type |= RequestStatus.REQUEST_STATUS_OK; // return success
-        return responsePacket;
-    }
+            debug(`Service: ${queryStrMap["service"].toUpperCase()}`, DebugType.DEBUG);
 
-    /***
-     * Handles the Hello packet that is sent from the bridging micro:bit upon initialised connection.
-     * An "OK" response is returned.
-     *
-     * @param serialPacket Incoming serial packet (HELLO PACKET)
-     */
-    private handleHelloPacket(serialPacket: SerialPacket): SerialPacket {
-        debug(`HELLO PACKET`, DebugType.DEBUG);
+            console.log(newURL);
 
-        debug(`School_ID: ${serialPacket.get(1)} hub_id: ${serialPacket.get(2)}`, DebugType.DEBUG);
+            console.log(serialPacket.getPayload().length);
+            console.log(endpoint["parameters"].length);
 
-        // set hub variables pi_id and school_id and set authenticate to true
-        this.hub_variables["credentials"]["school_id"] = serialPacket.get(1);
-        this.hub_variables["credentials"]["pi_id"] = serialPacket.get(2);
-        this.hub_variables["authenticated"] = true;
+            /*for(let parameter in endpoint["parameters"]) {
+                console.log(endpoint[parameter]);
+                /!*if(endpoint[parameter]["compulsory"]) {
+                    console.log("Compulsory");
+                }*!/
+            }*/
 
-        let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespcaeID(), serialPacket.getUID(), RequestType.REQUEST_TYPE_HELLO | RequestStatus.REQUEST_STATUS_OK);
-        responsePacket.append(0); // append a 0 for OK
+            let headers = {
+                "school-id": this.hub_variables["credentials"]["school_id"],
+                "pi-id": this.hub_variables["credentials"]["pi_id"]
+            };
 
-        return responsePacket;
+            //TODO: Temporary hardcoded parts for temporary functionality. This will be replaced with the translations
+            switch(queryStrMap["service"]) {
+                case "share":
+                    console.log("SHARE");
+
+                    if(queryStrMap["endpoint"] == "historicalData") {
+                        let jsonData = {
+                            "namespace": serialPacket.get(3),
+                            "name": serialPacket.get(2),
+                            "type": 0,
+                            "unit": serialPacket.get(4),
+                            "value": Number(serialPacket.get(1))
+                        };
+
+                        axios.post(`${this.hub_variables["proxy"]["address"]}/POST/?url=${newURL}`, jsonData, {headers: headers})
+                            .then((success) => {
+                                console.log(resolve);
+                                responsePacket.append("DATA SENT");
+                                resolve(responsePacket);
+                            })
+                            .catch((error) => {
+                                console.log("ERROR" + error);
+                            });
+
+                    } else {
+                        console.log("NON-HISTORICAL DATA UNIMPLIMENTED");
+                        reject("ERROR, HISTORIC DATA ONLY");
+                    }
+                    break;
+
+                case "init":
+                case "iot":
+                case "energy":
+                case "energyMeter":
+                case "weather":
+                case "carbon":
+                case "iss":
+                    reject(`Unimplimented service`);
+                    break;
+
+                default:
+                    reject(`Unknown service ${queryStrMap["service"]}`);
+            }
+
+            resolve(responsePacket);
+        });
     }
 
     /***
@@ -261,7 +337,7 @@ export class RequestHandler {
      *
      * @param serialPacket Incoming serial packet (REST REQUEST)
      */
-    private handleRESTRequest(serialPacket: SerialPacket): SerialPacket {
+    private handleRESTRequest(serialPacket: SerialPacket): Promise<SerialPacket> {
         debug(`REST REQUEST PACKET`, DebugType.DEBUG);
 
         let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespcaeID(), serialPacket.getUID());
@@ -272,10 +348,10 @@ export class RequestHandler {
 
         // check if the endpoint is in the translations
         if (!(root in this.translations)) {
-            debug(`Invalid endpoint: ${root}`, DebugType.ERROR);
-
-            responsePacket.request_type |= RequestStatus.REQUEST_STATUS_ERROR; // return error
-            return responsePacket;
+            //TODO: utilise promises more and reject the errors instead
+            return new Promise((resolve, reject) => {
+                reject(`Invalid Service (${root})`);
+            });
         }
 
         // get translation for endpoint
@@ -292,11 +368,10 @@ export class RequestHandler {
             responsePacket.request_type |= RequestType.REQUEST_TYPE_POST_REQUEST;
 
         } else {
-            responsePacket.request_type |= RequestStatus.REQUEST_STATUS_ERROR; // return error
-            return responsePacket;
+            return new Promise((resolve, reject) => {
+                reject("Invalid request type");
+            });
         }
-
-        debug(`Request type: ${requestType}`, DebugType.DEBUG);
 
         return this.processRESTRequest(serialPacket, responsePacket, translation, requestType);
     }
@@ -307,61 +382,73 @@ export class RequestHandler {
      *
      * @param serialPacket Incoming serial packet (CLOUD VARIABLE)
      */
-    private handleCloudVariable(serialPacket: SerialPacket) : SerialPacket {
-        debug(`CLOUD VARIABLE PACKET`, DebugType.DEBUG);
-        return null;
+    private handleCloudVariable(serialPacket: SerialPacket): Promise<SerialPacket> {
+        debug(`CLOUD VARIABLE PACKET (UNIMPLIMENTED)`, DebugType.DEBUG);
+        return new Promise((resolve, reject) => {
+            reject("Unimplemented");
+        });
     }
 
     /***
-     * Handles all requests and forwards the calls onto the correct handler based on the request type.
+     * Currently unimplimented.
+     * TODO: Implement broadcast
      *
-     * @param serialPacket Incoming serial packet (ALL REQUESTS)
+     * @param serialPacket Incoming serial packet (CLOUD VARIABLE)
      */
-    public handleRequest(serialPacket: SerialPacket): SerialPacket {
-        console.log("Handling request");
-
-        // if HELLO packet
-        if(serialPacket.request_type & RequestType.REQUEST_TYPE_HELLO) {
-            return this.handleHelloPacket(serialPacket);
-
-        // if a REST request
-        } else if(serialPacket.getReqRes() & (RequestType.REQUEST_TYPE_GET_REQUEST | RequestType.REQUEST_TYPE_POST_REQUEST)) {
-            return this.handleRESTRequest(serialPacket);
-
-        // if a CLOUD variable
-        } else if(serialPacket.getReqRes() & RequestType.REQUEST_TYPE_CLOUD_VARIABLE) {
-            return this.handleCloudVariable(serialPacket);
-
-        // if a BROADCAST request
-        } else if(serialPacket.getReqRes() & RequestType.REQUEST_TYPE_BROADCAST) {
-            debug(`BROADCAST REQUEST (UNIMPLIMENTED)`, DebugType.WARNING);
-            //TODO: Implement BROADCAST requests
-            return null;
-        }
-
-        debug(`Unrecognised packet type (${serialPacket.getReqRes()})`, DebugType.ERROR);
-        return null;
+    private handleBroadcast(serialPacket: SerialPacket): Promise<SerialPacket> {
+        debug(`BROADCAST REQUEST (UNIMPLIMENTED)`, DebugType.WARNING);
+        return new Promise((resolve, reject) => {
+            reject("Unimplemented");
+        });
     }
 
-    private processGETRequest(url: string) {
-        return '{ \n' +
-            '  "data":[{ \n' +
-            '    "from": "2019-02-21T15:00Z",\n' +
-            '    "to": "2019-02-21T15:30Z",\n' +
-            '    "intensity": {\n' +
-            '      "forecast": 215,\n' +
-            '      "actual": 211,\n' +
-            '      "index": "moderate"\n' +
-            '    }\n' +
-            '  }]\n' +
-            '}';
-        /*return $.ajax({
-            type: "GET",
-            dataType: "json",
-            url: "http://localhost:3000/command/GET/?url=" + url,
-            success: function(data){
+    /***
+     * Handles the Hello packet that is sent from the bridging micro:bit upon initialised connection.
+     * An "OK" response is returned.
+     *
+     * @param serialPacket Incoming serial packet (HELLO PACKET)
+     */
+    private handleHelloPacket(serialPacket: SerialPacket): Promise<SerialPacket> {
+        debug(`HELLO PACKET`, DebugType.DEBUG);
+        debug(`School_ID: ${serialPacket.get(1)} hub_id: ${serialPacket.get(2)}`, DebugType.DEBUG);
 
-            }
+        let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespcaeID(), serialPacket.getUID());
+
+        // if the hub has already been authenticated with a hello packet, return error
+        if (this.hub_variables["authenticated"]) {
+            return new Promise((resolve, reject) => {
+                reject("Already Authenticated");
+            });
+        }
+
+        // set hub variables pi_id and school_id and set authenticate to true
+        this.hub_variables["credentials"]["school_id"] = serialPacket.get(1);
+        this.hub_variables["credentials"]["pi_id"] = serialPacket.get(2);
+        this.hub_variables["authenticated"] = true;
+
+        responsePacket.request_type = RequestType.REQUEST_TYPE_HELLO | RequestStatus.REQUEST_STATUS_OK; // set request type to hello and status to OK
+        responsePacket.append(0); // append a 0 for OK
+
+        return new Promise((resolve, reject) => {
+            resolve(responsePacket);
+        });
+    }
+
+    /***
+     * Makes a GET request to the given URL
+     * @param url
+     * @param config
+     */
+    public static processGETRequest(url: string, config?: AxiosRequestConfig): Promise<any> {
+        return axios.get(url, config);
+        /*return new Promise((resolve, reject) => {
+            reject(`Invalid Service (${root})`);
         });*/
+    }
+
+    private processPOSTRequest(url: string): Promise<string> {
+        return new Promise((resolve, reject) => {
+            reject(``);
+        });
     }
 }

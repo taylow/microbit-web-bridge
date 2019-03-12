@@ -12,6 +12,7 @@ interface Packet {
     getReqRes(): number;
     getHeader(): number[];
     getPayload(): number[];
+    getFormattedPayload(): number[];
 }
 
 export { Packet }

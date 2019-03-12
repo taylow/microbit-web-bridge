@@ -1,3 +1,6 @@
+/***
+ * Slides in or out the terminal panel once the invisible checkbox is changed.
+ */
 $('#terminal-checkbox').change(function(change){
     if(change.target.checked)
         $('#terminal-container').animate({
@@ -9,6 +12,9 @@ $('#terminal-checkbox').change(function(change){
         });
 });
 
+/***
+ * Slides in or out the history panel once the invisible checkbox is changed.
+ */
 $('#history-checkbox').change(function(change){
     if(change.target.checked)
         $('#history-container').animate({

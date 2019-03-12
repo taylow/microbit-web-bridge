@@ -1,7 +1,35 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var Debug_1 = require("./Debug");
-var SerialPacket = /** @class */ (function () {
+const Debug_1 = require("./Debug");
+var SubType;
+(function (SubType) {
+    SubType[SubType["SUBTYPE_STRING"] = 1] = "SUBTYPE_STRING";
+    SubType[SubType["SUBTYPE_INT"] = 2] = "SUBTYPE_INT";
+    SubType[SubType["SUBTYPE_FLOAT"] = 4] = "SUBTYPE_FLOAT";
+    SubType[SubType["SUBTYPE_EVENT"] = 8] = "SUBTYPE_EVENT";
+})(SubType = exports.SubType || (exports.SubType = {}));
+var RequestType;
+(function (RequestType) {
+    RequestType[RequestType["REQUEST_TYPE_GET_REQUEST"] = 1] = "REQUEST_TYPE_GET_REQUEST";
+    RequestType[RequestType["REQUEST_TYPE_POST_REQUEST"] = 2] = "REQUEST_TYPE_POST_REQUEST";
+    RequestType[RequestType["REQUEST_TYPE_CLOUD_VARIABLE"] = 4] = "REQUEST_TYPE_CLOUD_VARIABLE";
+    RequestType[RequestType["REQUEST_TYPE_BROADCAST"] = 8] = "REQUEST_TYPE_BROADCAST";
+    RequestType[RequestType["REQUEST_TYPE_HELLO"] = 16] = "REQUEST_TYPE_HELLO";
+})(RequestType = exports.RequestType || (exports.RequestType = {}));
+var RequestStatus;
+(function (RequestStatus) {
+    RequestStatus[RequestStatus["REQUEST_STATUS_ACK"] = 32] = "REQUEST_STATUS_ACK";
+    RequestStatus[RequestStatus["REQUEST_STATUS_ERROR"] = 64] = "REQUEST_STATUS_ERROR";
+    RequestStatus[RequestStatus["REQUEST_STATUS_OK"] = 128] = "REQUEST_STATUS_OK";
+})(RequestStatus = exports.RequestStatus || (exports.RequestStatus = {}));
+var SlipChar;
+(function (SlipChar) {
+    SlipChar[SlipChar["SLIP_END"] = 192] = "SLIP_END";
+    SlipChar[SlipChar["SLIP_ESC"] = 219] = "SLIP_ESC";
+    SlipChar[SlipChar["SLIP_ESC_END"] = 220] = "SLIP_ESC_END";
+    SlipChar[SlipChar["SLIP_ESC_ESC"] = 221] = "SLIP_ESC_ESC";
+})(SlipChar = exports.SlipChar || (exports.SlipChar = {}));
+class SerialPacket {
     /***
      * Creates a SerialPacket and initialises header and payload variables.
      *
@@ -12,7 +40,7 @@ var SerialPacket = /** @class */ (function () {
      * @param response_type response_type from the micro:bit
      * @param payload Encoded prototype from the micro:bit
      */
-    function SerialPacket(app_id, namespace_id, uid, request_type, payload) {
+    constructor(app_id, namespace_id, uid, request_type, payload) {
         this.app_id = app_id;
         this.namespace_id = namespace_id;
         this.uid = uid;
@@ -25,107 +53,155 @@ var SerialPacket = /** @class */ (function () {
     /***
      * Returns the app_id of the packet.
      */
-    SerialPacket.prototype.getAppID = function () {
+    getAppID() {
         return this.app_id;
-    };
+    }
     /***
      * Returns the namespace_id of the packet.
      */
-    SerialPacket.prototype.getNamespcaeID = function () {
+    getNamespcaeID() {
         return this.namespace_id;
-    };
+    }
     /***
      * Returns the UID of the packet.
      */
-    SerialPacket.prototype.getUID = function () {
+    getUID() {
         return this.uid;
-    };
+    }
     /***
      * Returns the request_type or'ed with the response_type.
      */
-    SerialPacket.prototype.getReqRes = function () {
+    getReqRes() {
         return this.request_type;
-    };
+    }
     /***
      * Returns the header in a byte array ready for sending to the micro:bit.
      */
-    SerialPacket.prototype.getHeader = function () {
+    getHeader() {
         return [this.getAppID(), this.getNamespcaeID(), this.getUID(), this.getReqRes()];
-    };
+    }
+    /***
+     * Returns the non-formatted payload in array form.
+     */
+    getPayload() {
+        return this.payload;
+    }
     /***
      * Converts values found in the payload into a byte array ready for sending to the micro:bit.
+     *
+     * @returns The SerialPacket's payload in byte array form
      */
-    SerialPacket.prototype.getPayload = function () {
-        var formattedPayload = [];
+    getFormattedPayload() {
+        let formattedPayload = [];
         // format the payload data correctly
-        for (var i = 0; i < this.payload.length; i++) {
-            var value = this.payload[i];
+        for (let i = 0; i < this.payload.length; i++) {
+            let value = this.payload[i];
             switch (typeof value) {
                 case "number": // if int or float
-                    var buf = new ArrayBuffer(4);
-                    var view = new DataView(buf);
+                    let buf = new ArrayBuffer(4);
+                    let view = new DataView(buf);
                     if (value % 1 === 0) {
                         // if integer, use uint32
-                        formattedPayload.push(2 /* SUBTYPE_INT */);
+                        formattedPayload.push(SubType.SUBTYPE_INT);
                         view.setUint32(0, value, false);
                     }
                     else { // if (value % 1 !== 0) {
                         // if float use float32
-                        formattedPayload.push(4 /* SUBTYPE_FLOAT */);
+                        formattedPayload.push(SubType.SUBTYPE_FLOAT);
                         view.setFloat32(0, value, false);
                     }
                     // push the 4 bytes onto the data array
-                    for (var i_1 = 0; i_1 < buf.byteLength; i_1++)
-                        formattedPayload.push(view.getUint8(i_1));
+                    for (let i = 0; i < buf.byteLength; i++)
+                        formattedPayload.push(view.getUint8(i));
                     break;
                 case "string": // if string
-                    formattedPayload.push(1 /* SUBTYPE_STRING */); // push the string subtype byte to the formatted payload
+                    formattedPayload.push(SubType.SUBTYPE_STRING); // push the string subtype byte to the formatted payload
                     // push all characters onto data array
-                    for (var i_2 = 0; i_2 < value.length; i_2++)
-                        formattedPayload.push(value.charCodeAt(i_2)); // push each character code to the payload
+                    for (let i = 0; i < value.length; i++)
+                        formattedPayload.push(value.charCodeAt(i)); // push each character code to the payload
                     break;
                 default:
                     //TODO: Implement Events
-                    Debug_1.debug("FOUND UNIMPLEMENTED SUBTYPE WHILE ENCODING PACKET " + typeof value + " (" + value + ")", Debug_1.DebugType.WARNING);
+                    Debug_1.debug(`FOUND UNIMPLEMENTED SUBTYPE WHILE ENCODING PACKET ${typeof value} (${value})`, Debug_1.DebugType.WARNING);
             }
         }
         return formattedPayload;
-    };
+    }
     /***
      * Returns a formatted packet in byte array form.
+     *
+     * Byte  |   Use
+     * -------------------------
+     * 0     | Unused, always 0
+     * 1     | app_id
+     * 2     | namespace_id
+     * 3     | uid
+     * 4     | request_type
+     * 5 - n | payload contiguously stored
+     * n + 1 | SLIP_END (192)
      */
-    SerialPacket.prototype.getFormattedPacket = function () {
-        //TODO: Process the packet correctly and correctly implement SLIP
-        return [0].concat(this.getHeader().concat(this.getPayload())).concat([192 /* SLIP_END */]);
-    };
+    getFormattedPacket() {
+        return [0].concat(this.getHeader().concat(this.getFormattedPayload())).concat([SlipChar.SLIP_END]);
+    }
+    /***
+     * Sets a bit in the request_type header byte.
+     * @param bitValue The bit to set
+     */
+    setRequestBit(bitValue) {
+        this.request_type |= bitValue;
+    }
+    /***
+     * Clears a given bit in the request_type header byte.
+     * @param bitValue The bit to clear
+     */
+    clearRequestBit(bitValue) {
+        this.request_type &= ~bitValue;
+    }
+    /***
+     * Modifies the SerialPacket to return an error status by clearing any previously set status flags
+     * while retaining the request type (e.g. REST, hello, etc.)
+     */
+    clearAndError(errorMessage) {
+        // clear all other status codes
+        for (let status in RequestStatus) {
+            this.clearRequestBit(Number(status));
+        }
+        // set status code to REQUEST_STATUS_ERROR
+        this.setRequestBit(RequestStatus.REQUEST_STATUS_ERROR);
+        // clear payload and add an error message if necessary
+        this.clear();
+        if (errorMessage.length > 0)
+            this.append(errorMessage);
+        return this;
+    }
     /***
      * Appends a variable onto the end of the payload.
      *
      * @param variable The variable to add to the SerialPacket payload
      */
-    SerialPacket.prototype.append = function (variable) {
+    append(variable) {
         this.payload.push(variable);
-    };
+    }
     /***
      * Removes an element from the payload at a given index.
      *
      * @param index Index of the variable to remove
      */
-    SerialPacket.prototype.remove = function (index) {
+    remove(index) {
         this.payload = this.payload.slice(0, index).concat(this.payload.slice(index + 1));
-    };
+    }
     /***
      * Returns a payload variable at a given index.
      *
      * @param index Index of the variable
      * @return The element from the payload at index
      */
-    SerialPacket.prototype.get = function (index) {
+    get(index) {
         return this.payload[index];
-    };
-    SerialPacket.prototype.clear = function () {
+    }
+    clear() {
         this.payload = [];
-    };
+    }
     /***
      * Unmarshalls a pre-marshelled payload into an array of any type.
      *
@@ -134,16 +210,16 @@ var SerialPacket = /** @class */ (function () {
      *
      * @param rawPayload A byte array of marshalled variables
      */
-    SerialPacket.prototype.decode = function (rawPayload) {
-        var payload = [];
-        var data = [];
-        var subtype = -1;
-        for (var i = 0; i < rawPayload.length; i++) {
+    decode(rawPayload) {
+        let payload = [];
+        let data = [];
+        let subtype = -1;
+        for (let i = 0; i < rawPayload.length; i++) {
             switch (rawPayload[i]) {
-                case 1 /* SUBTYPE_STRING */:
-                case 2 /* SUBTYPE_INT */:
-                case 4 /* SUBTYPE_FLOAT */:
-                case 8 /* SUBTYPE_EVENT */:
+                case SubType.SUBTYPE_STRING:
+                case SubType.SUBTYPE_INT:
+                case SubType.SUBTYPE_FLOAT:
+                case SubType.SUBTYPE_EVENT:
                     // if we already have data, process it before going onto next byte
                     if (subtype !== -1) {
                         payload.push(this.decodeSubType(data, subtype));
@@ -158,7 +234,7 @@ var SerialPacket = /** @class */ (function () {
         }
         payload.push(this.decodeSubType(data, subtype)); // process last bit of payload that wasn't covered by the loop
         return payload;
-    };
+    }
     /***
      * Decodes data with their given subtype and returns the correct data.
      *
@@ -172,42 +248,41 @@ var SerialPacket = /** @class */ (function () {
      * @param subtype The subtype of the data (see list above)
      * @returns The data in its correct format (e.g. [2, 0, 0, 0, 0] = (int) 0)
      */
-    SerialPacket.prototype.decodeSubType = function (data, subtype) {
-        var buf = new ArrayBuffer(4);
-        var view = new DataView(buf);
+    decodeSubType(data, subtype) {
+        let buf = new ArrayBuffer(4);
+        let view = new DataView(buf);
         switch (subtype) {
-            case 1 /* SUBTYPE_STRING */:
-                var str = String.fromCharCode.apply(null, data);
+            case SubType.SUBTYPE_STRING:
+                let str = String.fromCharCode.apply(null, data);
                 // remove terminating 0
                 if (str.charCodeAt(str.length - 1) === 0)
                     str = str.substr(0, str.length - 1);
-                Debug_1.debug("String found: " + str, Debug_1.DebugType.DEBUG);
+                // debug(`String found: ${str}`, DebugType.DEBUG);
                 return str;
-            case 2 /* SUBTYPE_INT */:
+            case SubType.SUBTYPE_INT:
                 // put each byte of int into data view
                 data.forEach(function (b, i) {
                     view.setUint8(i, b);
                 });
-                var int = view.getInt32(0);
-                Debug_1.debug("Int found: " + int, Debug_1.DebugType.DEBUG);
+                let int = view.getInt32(0);
+                // debug(`Int found: ${int}`, DebugType.DEBUG);
                 return int;
-            case 4 /* SUBTYPE_FLOAT */:
+            case SubType.SUBTYPE_FLOAT:
                 // put each byte of int into data view
                 data.forEach(function (b, i) {
                     view.setUint8(i, b);
                 });
-                var float = view.getFloat32(0);
-                Debug_1.debug("Float found: " + float, Debug_1.DebugType.DEBUG);
+                let float = view.getFloat32(0);
+                // debug(`Float found: ${float}`, DebugType.DEBUG);
                 return float;
-            case 8 /* SUBTYPE_EVENT */:
-                Debug_1.debug("Event found: UNIMPLIMENTED", Debug_1.DebugType.DEBUG);
+            case SubType.SUBTYPE_EVENT:
+                Debug_1.debug(`Event found: UNIMPLIMENTED`, Debug_1.DebugType.DEBUG);
                 //TODO: Implement events
                 break;
             default:
-                Debug_1.debug("Unimplemented subtype: " + subtype + " (" + data + ")", Debug_1.DebugType.WARNING);
+                Debug_1.debug(`Unimplemented subtype: ${subtype} (${data})`, Debug_1.DebugType.WARNING);
         }
-    };
-    return SerialPacket;
-}());
+    }
+}
 exports.SerialPacket = SerialPacket;
 //# sourceMappingURL=SerialPacket.js.map

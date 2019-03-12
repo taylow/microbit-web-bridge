@@ -1,6 +1,7 @@
 import * as $ from "jquery";
 
 const DEBUG = true;
+const TIMESTAMPS = true;
 
 export enum DebugType {
     ERROR = "ERROR",
@@ -11,13 +12,24 @@ export enum DebugType {
 export function debug(message: any, type?: DebugType) {
     const terminal = $('#terminal-contents');
 
-    if(DEBUG && type != null) {
-        console.log(`${type}: ${message}`);
-        terminal.text(terminal.text() + message + '\n');
-        return;
-    } else if(DEBUG) {
-        console.log(`${message}`);
+    let consoleString = "";
+    let terminalString = "";
+
+    if(TIMESTAMPS) {
+        consoleString += `[${new Date().toISOString().slice(11,-5)}] `;
+        terminalString = consoleString;
     }
 
-    terminal.text(terminal.text() + message + '\n');
+    if(type != null) {
+        consoleString += `${type}: `;
+    }
+
+    if(DEBUG) {
+        consoleString += message;
+        terminalString += message;
+        console.log(consoleString);
+    }
+
+    terminal.text(`${terminal.text()}${terminalString}\n`);
+    terminal.scrollTop(terminal[0].scrollHeight)
 }

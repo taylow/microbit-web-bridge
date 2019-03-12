@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var $ = require("jquery");
-var DEBUG = true;
+const $ = require("jquery");
+const DEBUG = true;
+const TIMESTAMPS = true;
 var DebugType;
 (function (DebugType) {
     DebugType["ERROR"] = "ERROR";
@@ -9,16 +10,23 @@ var DebugType;
     DebugType["WARNING"] = "WARNING";
 })(DebugType = exports.DebugType || (exports.DebugType = {}));
 function debug(message, type) {
-    var terminal = $('#terminal-contents');
-    if (DEBUG && type != null) {
-        console.log(type + ": " + message);
-        terminal.text(terminal.text() + message + '\n');
-        return;
+    const terminal = $('#terminal-contents');
+    let consoleString = "";
+    let terminalString = "";
+    if (TIMESTAMPS) {
+        consoleString += `[${new Date().toISOString().slice(11, -5)}] `;
+        terminalString = consoleString;
     }
-    else if (DEBUG) {
-        console.log("" + message);
+    if (type != null) {
+        consoleString += `${type}: `;
     }
-    terminal.text(terminal.text() + message + '\n');
+    if (DEBUG) {
+        consoleString += message;
+        terminalString += message;
+        console.log(consoleString);
+    }
+    terminal.text(`${terminal.text()}${terminalString}\n`);
+    terminal.scrollTop(terminal[0].scrollHeight);
 }
 exports.debug = debug;
 //# sourceMappingURL=Debug.js.map

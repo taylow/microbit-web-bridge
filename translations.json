@@ -53,8 +53,7 @@
     "share":{
         "GET" : {
             "apiPrefix":"get",
-            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/variables/",
-            "extraURL":"https://energyinschools.co.uk/api/v1/micro-bit/historical-data/",
+            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/%api_endpoint?=variables%/",
             "microbitQueryString":"/%endpoint%/%unit?%",
             "compulsoryParameters":[
                 {
@@ -75,19 +74,25 @@
         },
         "POST" : {
             "apiPrefix":"set",
-            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/variables/",
-            "extraURL":"https://energyinschools.co.uk/api/v1/micro-bit/historical-data/",
+            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/%api_endpoint?=variables%/",
             "microbitQueryString":"/%endpoint%/",
             "endpoint":{
                 "shareData":{
                     "parameters":[
                         {
+                            "name":"key",
+                            "type":"string",
+                            "compulsory": false
+                        },
+                        {
                             "name":"value",
-                            "type":"string"
+                            "type":"string",
+                            "compulsory": true
                         },
                         {
                             "name":"name",
-                            "type":"string"
+                            "type":"string",
+                            "compulsory": true
                         },
                         {
                             "name":"level",
@@ -102,18 +107,29 @@
                     ]
                 },
                 "historicalData":{
+                    "queryObject": {
+                        "api_endpoint": "historical-data"
+                    },
                     "parameters":[
                         {
                             "name":"value",
-                            "type":"string"
+                            "type":"string",
+                            "compulsory": true
                         },
                         {
                             "name":"name",
-                            "type":"string"
+                            "type":"string",
+                            "compulsory": true
                         },
                         {
-                            "name":"unitname",
-                            "type":"string"
+                            "name":"namespace",
+                            "type":"string",
+                            "compulsory": true
+                        },
+                        {
+                            "name":"unit",
+                            "type":"string",
+                            "compulsory": true
                         }
                     ],
                     "returns":[
@@ -506,6 +522,7 @@
             ],
             "endpoint":{
                 "index":{
+                    "jspath": ".data.intensity.index",
                     "returns":[
                         {
                             "type":"string",
@@ -514,6 +531,7 @@
                     ]
                 },
                 "value":{
+                    "jspath": ".data.intensity.actual",
                     "returns":[
                         {
                             "type":"string",
@@ -522,6 +540,7 @@
                     ]
                 },
                 "genmix":{
+                    "jspath": ".data.generationmix.{.fuel == '%unit%'}.perclel",
                     "queryObject": {
                         "api_endpoint": "generation"
                     },

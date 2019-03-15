@@ -61,7 +61,7 @@ export class SerialHandler {
                         debug(`${reason}`, DebugType.ERROR);
 
                         // clear all data from input packet and return it as an error packet
-                        let responsePacket = serialPacket;
+                        let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespcaeID(), serialPacket.getUID(), serialPacket.getReqRes());
                         responsePacket.clearAndError(reason);
                         this.sendSerialPacket(responsePacket);
                     });

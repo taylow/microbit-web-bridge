@@ -282,12 +282,13 @@ class RequestHandler {
                         };
                         axios_1.default.post(`${this.hub_variables["proxy"]["address"]}/POST/?url=${newURL}`, jsonData, { headers: headers })
                             .then((success) => {
-                            console.log(resolve);
                             responsePacket.append("DATA SENT");
+                            responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                             resolve(responsePacket);
                         })
                             .catch((error) => {
                             console.log("ERROR" + error);
+                            reject("COULD NOT SHARE DATA");
                         });
                     }
                     else {
@@ -307,7 +308,8 @@ class RequestHandler {
                 default:
                     reject(`Unknown service ${queryStrMap["service"]}`);
             }
-            resolve(responsePacket);
+            // responsePacket.request_type |= RequestStatus.REQUEST_STATUS_OK;
+            // resolve(responsePacket);
         });
     }
     /***

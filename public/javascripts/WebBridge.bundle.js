@@ -14047,8 +14047,7 @@ process.umask = function() { return 0; };
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const $ = require("jquery");
-const DEBUG = true;
-const TIMESTAMPS = true;
+const Config_1 = require("./constants/Config");
 var DebugType;
 (function (DebugType) {
     DebugType["ERROR"] = "ERROR";
@@ -14059,14 +14058,14 @@ function debug(message, type) {
     const terminal = $('#terminal-contents');
     let consoleString = "";
     let terminalString = "";
-    if (TIMESTAMPS) {
+    if (Config_1.TIMESTAMPS) {
         consoleString += `[${new Date().toISOString().slice(11, -5)}] `;
         terminalString = consoleString;
     }
     if (type != null) {
         consoleString += `${type}: `;
     }
-    if (DEBUG) {
+    if (Config_1.DEBUG) {
         consoleString += message;
         terminalString += message;
         console.log(consoleString);
@@ -14076,7 +14075,7 @@ function debug(message, type) {
 }
 exports.debug = debug;
 
-},{"jquery":38}],41:[function(require,module,exports){
+},{"./constants/Config":46,"jquery":38}],41:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -14347,6 +14346,7 @@ class RequestHandler {
                 "school-id": this.hub_variables["credentials"]["school_id"],
                 "pi-id": this.hub_variables["credentials"]["pi_id"]
             };
+            //TODO: Temporary hardcoded parts for temporary functionality. This will be replaced with the translations
             switch (queryStrMap["service"]) {
                 case "share":
                     console.log("SHARE");
@@ -14360,12 +14360,13 @@ class RequestHandler {
                         };
                         axios_1.default.post(`${this.hub_variables["proxy"]["address"]}/POST/?url=${newURL}`, jsonData, { headers: headers })
                             .then((success) => {
-                            console.log(resolve);
                             responsePacket.append("DATA SENT");
+                            responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                             resolve(responsePacket);
                         })
                             .catch((error) => {
                             console.log("ERROR" + error);
+                            reject("COULD NOT SHARE DATA");
                         });
                     }
                     else {
@@ -14385,7 +14386,8 @@ class RequestHandler {
                 default:
                     reject(`Unknown service ${queryStrMap["service"]}`);
             }
-            resolve(responsePacket);
+            // responsePacket.request_type |= RequestStatus.REQUEST_STATUS_OK;
+            // resolve(responsePacket);
         });
     }
     /***
@@ -14552,7 +14554,7 @@ class SerialHandler {
                     .catch((reason) => {
                     Debug_1.debug(`${reason}`, Debug_1.DebugType.ERROR);
                     // clear all data from input packet and return it as an error packet
-                    let responsePacket = serialPacket;
+                    let responsePacket = new SerialPacket_1.SerialPacket(serialPacket.getAppID(), serialPacket.getNamespcaeID(), serialPacket.getUID(), serialPacket.getReqRes());
                     responsePacket.clearAndError(reason);
                     this.sendSerialPacket(responsePacket);
                 });
@@ -15244,4 +15246,34 @@ navigator.usb.addEventListener('disconnect', (device) => {
         disconnect();
 });
 
-},{"./Debug":40,"./SerialHandler":42,"./SerialPacket":43,"./Translations":44,"dapjs/lib/daplink":30,"dapjs/lib/transport/webusb":35,"jquery":38}]},{},[45]);
+},{"./Debug":40,"./SerialHandler":42,"./SerialPacket":43,"./Translations":44,"dapjs/lib/daplink":30,"dapjs/lib/transport/webusb":35,"jquery":38}],46:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DOMAIN = 'https://energyinschools.co.uk';
+exports.BASE_URL = `${exports.DOMAIN}/api/v1`;
+exports.BLOCK_EDITOR_URL = `${exports.DOMAIN}/static/makecode-blockeditor/index.html`;
+exports.REFRESH_TOKEN_URL = `${exports.DOMAIN}/api/v1/token/refresh/`;
+// Token Types
+exports.TOKEN_TYPE = Object.freeze({
+    API_AUTH: 'apiAuth',
+    DASHBOARD_AUTH: 'dashboardAuth',
+});
+exports.ADMIN_ROLE = 'admin'; // todo: use nested namespace (like enum)
+exports.SLE_ADMIN_ROLE = 'sle_admin';
+exports.SEM_ADMIN_ROLE = 'sem_admin';
+exports.TEACHER_ROLE = 'teacher';
+exports.PUPIL_ROLE = 'pupil';
+exports.ES_ADMIN_ROLE = 'es_admin';
+exports.ES_USER = 'es_user';
+/* DEBUG CONSTANTS */
+exports.DEBUG = true;
+exports.TIMESTAMPS = true;
+/* HTTP/HTTPS CONFIGS */
+exports.HTTP_PORT = 3000;
+exports.HTTPS_PORT = 443;
+exports.USE_HTTPS = false;
+exports.HTTPS_PRIVATE_KEY = "/etc/letsencrypt/live/scc-tw.lancs.ac.uk/privkey.pem";
+exports.HTTPS_CERTIFICATE = "/etc/letsencrypt/live/scc-tw.lancs.ac.uk/cert.pem";
+exports.HTTPS_CA = "/etc/letsencrypt/live/scc-tw.lancs.ac.uk/chain.pem";
+
+},{}]},{},[45]);

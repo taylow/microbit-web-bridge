@@ -300,14 +300,14 @@ export class RequestHandler {
 
                         axios.post(`${this.hub_variables["proxy"]["address"]}/POST/?url=${newURL}`, jsonData, {headers: headers})
                             .then((success) => {
-                                console.log(resolve);
                                 responsePacket.append("DATA SENT");
+                                responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                             .catch((error) => {
                                 console.log("ERROR" + error);
+                                reject("COULD NOT SHARE DATA");
                             });
-
                     } else {
                         console.log("NON-HISTORICAL DATA UNIMPLIMENTED");
                         reject("ERROR, HISTORIC DATA ONLY");
@@ -328,7 +328,8 @@ export class RequestHandler {
                     reject(`Unknown service ${queryStrMap["service"]}`);
             }
 
-            resolve(responsePacket);
+            // responsePacket.request_type |= RequestStatus.REQUEST_STATUS_OK;
+            // resolve(responsePacket);
         });
     }
 

@@ -1,7 +1,6 @@
 import * as $ from "jquery";
+import {DEBUG, TIMESTAMPS} from "./constants/Config";
 
-const DEBUG = true;
-const TIMESTAMPS = true;
 
 export enum DebugType {
     ERROR = "ERROR",

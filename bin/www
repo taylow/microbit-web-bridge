@@ -1,25 +1,39 @@
 #!/usr/bin/env node
 
+const config = require("./ServerConfig.js");
+
 /**
  * Module dependencies.
  */
 
-var app = require('../app');
-var debug = require('debug')('microbit-web-bridge:server');
-var http = require('http');
+const app = require('../app');
+const debug = require('debug')('microbit-web-bridge:server');
+const http = require('http');
+const https = require('https');
+const fs = require('fs');
+
+/**
+ * SSL Certificate
+ */
+
+const credentials = {
+  // key: fs.readFileSync(config.HTTPS_PRIVATE_KEY, 'utf8'),
+  // cert: fs.readFileSync(config.HTTPS_CERTIFICATE, 'utf8'),
+  // ca: fs.readFileSync(config.HTTPS_CA, 'utf8')
+};
 
 /**
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || '3000');
+const port = normalizePort(process.env.PORT || (config.USE_HTTPS ? config.HTTPS_PORT : config.HTTP_PORT));
 app.set('port', port);
 
 /**
  * Create HTTP server.
  */
 
-var server = http.createServer(app);
+const server = (config.USE_HTTPS ? https.createServer(credentials, app) : http.createServer(app));
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -34,7 +48,7 @@ server.on('listening', onListening);
  */
 
 function normalizePort(val) {
-  var port = parseInt(val, 10);
+  let port = parseInt(val, 10);
 
   if (isNaN(port)) {
     // named pipe
@@ -58,7 +72,7 @@ function onError(error) {
     throw error;
   }
 
-  var bind = typeof port === 'string'
+  let bind = typeof port === 'string'
     ? 'Pipe ' + port
     : 'Port ' + port;
 
@@ -82,9 +96,20 @@ function onError(error) {
  */
 
 function onListening() {
-  var addr = server.address();
-  var bind = typeof addr === 'string'
+  let addr = server.address();
+  let bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
+}
+
+/**
+ * HTTP to HTTPS Redirection
+ */
+
+if(config.USE_HTTPS) {
+  http.createServer((req, res) => {
+    res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+    res.end();
+  }).listen(config.HTTP_PORT);
 }

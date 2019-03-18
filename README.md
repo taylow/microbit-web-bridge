@@ -46,5 +46,7 @@ As JavaScript/TypeScript aren't my strongest language, and my knowledge of NodeJ
 
 I built this project using WebStorm's brilliant Node.JS Express App generator and utilised the features provided. With the division of business logic and views, modifying the look and feel of the page while maintaining the technical stuff was made very simple. The rendering is achieved via Jade and CSS located in the ``views`` and ``public\stylesheets`` folders, while the logic uses TypeScript found throughout the repo.
 
+**Note: This project is a bit messy at the minute. There are some files within this project that are there purely for local testing purposes and will be removed once complete.**
+
 ## Repos
 [DAPjs](https://github.com/ARMmbed/dapjs) JavaScript interface to CMSIS-DAP

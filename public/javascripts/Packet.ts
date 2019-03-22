@@ -7,12 +7,12 @@ interface Packet {
     payload: any[];
 
     getAppID(): number;
-    getNamespcaeID(): number;
+    getNamespaceID(): number;
     getUID(): number;
     getReqRes(): number;
     getHeader(): number[];
     getPayload(): number[];
-    getFormattedPayload(): number[];
+    getFormattedPayloadParts(): number[];
 }
 
 export { Packet }

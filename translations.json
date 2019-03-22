@@ -54,7 +54,7 @@
         "GET" : {
             "apiPrefix":"get",
             "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/%api_endpoint?=variables%/",
-            "microbitQueryString":"/%endpoint%/%unit?%",
+            "microbitQueryString":"/%endpoint%/%unit?%/%location?%/",
             "compulsoryParameters":[
                 {
                     "name":"endpoint",

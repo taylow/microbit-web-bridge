@@ -1,5 +1,6 @@
 import {Packet} from "./Packet";
 import {debug, DebugType} from "./Debug";
+import {unpack, pack} from 'bufferpack';
 
 export enum SubType {
     SUBTYPE_STRING = 0x01,
@@ -29,6 +30,9 @@ export enum SlipChar {
     SLIP_ESC_ESC = 0xDD
 }
 
+export const HEADER_LENGTH = 5;
+export const HEADER_STRUCTURE = "<BBHB";
+
 export class SerialPacket implements Packet {
     app_id: number;
     namespace_id: number;
@@ -53,8 +57,9 @@ export class SerialPacket implements Packet {
         this.request_type = request_type;
         this.payload = [];
 
+        // if the a payload was passed in, decode it
         if(payload != null) {
-            this.payload = this.decode(payload);
+            this.decode(payload);
         }
     }
 
@@ -68,7 +73,7 @@ export class SerialPacket implements Packet {
     /***
      * Returns the namespace_id of the packet.
      */
-    public getNamespcaeID(): number {
+    public getNamespaceID(): number {
         return this.namespace_id;
     }
 
@@ -90,7 +95,7 @@ export class SerialPacket implements Packet {
      * Returns the header in a byte array ready for sending to the micro:bit.
      */
     public getHeader(): number[] {
-        return [this.getAppID(), this.getNamespcaeID(), this.getUID(), this.getReqRes()];
+        return pack(HEADER_STRUCTURE, [this.app_id, this.namespace_id, this.uid, this.request_type]);
     }
 
     /***
@@ -101,12 +106,20 @@ export class SerialPacket implements Packet {
     }
 
     /***
-     * Converts values found in the payload into a byte array ready for sending to the micro:bit.
+     * Converts values found in the payload into an array of byte arrays ready for sending to the micro:bit.
      *
      * @returns The SerialPacket's payload in byte array form
      */
-    public getFormattedPayload(): number[] {
+    public getFormattedPayloadParts(): number[] {
         let formattedPayload: any = [];
+
+        function isInt(n){
+            return Number(n) === n && n % 1 === 0;
+        }
+
+        function isFloat(n){
+            return Number(n) === n && n % 1 !== 0;
+        }
 
         // format the payload data correctly
         for(let i = 0; i < this.payload.length; i++) {
@@ -114,28 +127,15 @@ export class SerialPacket implements Packet {
 
             switch(typeof value) {
                 case "number": // if int or float
-                    let buf = new ArrayBuffer(4);
-                    let view = new DataView(buf);
-
-                    if (value % 1 === 0) {
-                        // if integer, use uint32
-                        formattedPayload.push(SubType.SUBTYPE_INT);
-                        view.setUint32(0, value, false);
-                    } else { // if (value % 1 !== 0) {
-                        // if float use float32
-                        formattedPayload.push(SubType.SUBTYPE_FLOAT);
-                        view.setFloat32(0, value, false);
+                    if(isInt(value)) {
+                        formattedPayload.push(pack("<Bi", [SubType.SUBTYPE_INT, value]))
+                    } else if(isFloat(value)) {
+                        formattedPayload.push(pack("<Bf", [SubType.SUBTYPE_FLOAT, value]))
                     }
-
-                    // push the 4 bytes onto the data array
-                    for (let i = 0; i < buf.byteLength; i++) formattedPayload.push(view.getUint8(i));
                     break;
 
                 case "string": // if string
-                    formattedPayload.push(SubType.SUBTYPE_STRING); // push the string subtype byte to the formatted payload
-
-                    // push all characters onto data array
-                    for (let i = 0; i < (<string> value).length; i++) formattedPayload.push(value.charCodeAt(i)); // push each character code to the payload
+                    formattedPayload.push(pack(`<B${value.length + 1}s`, [SubType.SUBTYPE_STRING, (value + '\0')]));
                     break;
 
                 default:
@@ -151,16 +151,45 @@ export class SerialPacket implements Packet {
      *
      * Byte  |   Use
      * -------------------------
-     * 0     | Unused, always 0
-     * 1     | app_id
-     * 2     | namespace_id
-     * 3     | uid
-     * 4     | request_type
+     * 0 - 4 | app_id
+     *       | namespace_id
+     *       | uid
+     *       | request_type
+     *       |
      * 5 - n | payload contiguously stored
      * n + 1 | SLIP_END (192)
      */
     public getFormattedPacket(): number[] {
-        return [0].concat(this.getHeader().concat(this.getFormattedPayload())).concat([SlipChar.SLIP_END]);
+        let finalPacket = new Uint8Array(this.length()); // create new array to store all others
+        finalPacket.set(this.getHeader()); // add header to new array
+
+        let offset = this.getHeader().length; // set offset to the length of the header
+
+        // loop through all parts of the payload, adding each element at the offset
+        this.getFormattedPayloadParts().forEach((item) => {
+            // @ts-ignore
+            finalPacket.set(item, offset);
+            // @ts-ignore
+            offset += item.length;
+        });
+
+        return Array.from(finalPacket).concat(SlipChar.SLIP_END);
+    }
+
+    /***
+     * Calculates and returns the length total of the packet before any SLIP has been added.
+     */
+    public length(): number {
+        let length = 0;
+        length += this.getHeader().length;
+
+        // loop through all payload parts
+        this.getFormattedPayloadParts().forEach((item) => {
+            // @ts-ignore
+            length += item.length;
+        });
+
+        return length;
     }
 
     /***
@@ -179,12 +208,12 @@ export class SerialPacket implements Packet {
         this.request_type &= ~bitValue;
     }
 
-
     /***
      * Modifies the SerialPacket to return an error status by clearing any previously set status flags
      * while retaining the request type (e.g. REST, hello, etc.)
      */
     public clearAndError(errorMessage?: string): SerialPacket {
+        this.request_type = 0;
         // clear all other status codes
         for(let status in RequestStatus) {
             this.clearRequestBit(Number(status));
@@ -232,97 +261,58 @@ export class SerialPacket implements Packet {
         this.payload = [];
     }
 
-    /***
-     * Unmarshalls a pre-marshelled payload into an array of any type.
-     *
-     * E.g. Takes [1, 84, 69, 83, 84, 2, 0, 0, 0, 100]
-     *      And converts to ["TEST", 100]
-     *
-     * @param rawPayload A byte array of marshalled variables
-     */
-    public decode(rawPayload: number[]): any[] {
-        let payload = [];
-        let data = [];
-        let subtype = -1;
+    private decode(rawPayload: number[]) {
+        if(rawPayload.length == 0)
+            return;
 
-        for(let i = 0; i < rawPayload.length; i++) {
-            switch(rawPayload[i]) {
-                case SubType.SUBTYPE_STRING:
-                case SubType.SUBTYPE_INT:
-                case SubType.SUBTYPE_FLOAT:
-                case SubType.SUBTYPE_EVENT:
-                    // if we already have data, process it before going onto next byte
-                    if(subtype !== -1) {
-                        payload.push(this.decodeSubType(data, subtype));
-                    }
+        let data: any;
+        let offset = 0;
 
-                    subtype = rawPayload[i]; // set subtype
-                    data = []; // delete previous data
+        // grab subtype and the remainder of the packet
+        let subtype = unpack("b", rawPayload);
+        let remainder = rawPayload.slice(1);
+
+        // compare against each subtype and process the data accordingly
+        if (subtype & SubType.SUBTYPE_STRING) {
+            data = "";
+            // loop through all characters of the string
+            for(let c in remainder) {
+                if(String.fromCharCode(remainder[c]) == '\0') // if we find a terminating character, stop
                     break;
-
-                default:
-                    data.push(rawPayload[i]); // push byte onto current data
-                    break;
+                data += String.fromCharCode(remainder[c]); // add the character to the data
             }
+            offset = data.length + 1; // string is n + 1 bytes (+1 for terminating char)
+        } else if(subtype & SubType.SUBTYPE_INT) {
+            data = unpack("<i", remainder)[0]; //FIXME: This seems to return incorrect values (big/little endian?)
+            offset = 4; // integer is 4 bytes
+        } else if(subtype & SubType.SUBTYPE_FLOAT) {
+            data = unpack("<f", remainder)[0];
+            offset = 4; // float is 4 bytes
         }
-        payload.push(this.decodeSubType(data, subtype)); // process last bit of payload that wasn't covered by the loop
 
-        return payload;
+        this.payload.push(data); // process last bit of payload that wasn't covered by the loop
+        this.decode(remainder.slice(offset));
     }
 
     /***
-     * Decodes data with their given subtype and returns the correct data.
+     * Converts raw data into a SerialPacket for easy processing.
      *
-     * Subtypes:
-     *      SUBTYPE_STRING = 0x01
-     *      SUBTYPE_INT = 0x02
-     *      SUBTYPE_FLOAT = 0x04
-     *      SUBTYPE_EVENT = 0x08
-     *
-     * @param data The raw byte array data of one of the given subtypes
-     * @param subtype The subtype of the data (see list above)
-     * @returns The data in its correct format (e.g. [2, 0, 0, 0, 0] = (int) 0)
+     * @param data Raw serial data coming from the bridging micro:bit
      */
-    public decodeSubType(data: any[], subtype: number) {
-        let buf = new ArrayBuffer(4);
-        let view = new DataView(buf);
+    public static dataToSerialPacket(data: string): SerialPacket {
+        let bytes = [];
+        let payload: any[];
+        let header: any[];
 
-        switch(subtype) {
-            case SubType.SUBTYPE_STRING:
-                let str = String.fromCharCode.apply(null, data);
-
-                // remove terminating 0
-                if(str.charCodeAt(str.length - 1) === 0)
-                    str = str.substr(0,str.length - 1);
-
-                // debug(`String found: ${str}`, DebugType.DEBUG);
-                return str;
-
-            case SubType.SUBTYPE_INT:
-                // put each byte of int into data view
-                data.forEach(function (b, i) {
-                    view.setUint8(i, b);
-                });
-                let int = view.getInt32(0);
-                // debug(`Int found: ${int}`, DebugType.DEBUG);
-                return int;
-
-            case SubType.SUBTYPE_FLOAT:
-                // put each byte of int into data view
-                data.forEach(function (b, i) {
-                    view.setUint8(i, b);
-                });
-                let float = view.getFloat32(0);
-                // debug(`Float found: ${float}`, DebugType.DEBUG);
-                return float;
-
-            case SubType.SUBTYPE_EVENT:
-                debug(`Event found: UNIMPLIMENTED`, DebugType.DEBUG);
-                //TODO: Implement events
-                break;
-
-            default:
-                debug(`Unimplemented subtype: ${subtype} (${data})`, DebugType.WARNING);
+        for(let i = 0; i < data.length - 1; i++) {
+            bytes.push(data.charCodeAt(i));
         }
+
+        // unpack header using header structure
+        header = unpack(HEADER_STRUCTURE, bytes.slice(0, HEADER_LENGTH));
+        payload = bytes.slice(HEADER_LENGTH);
+
+        // create packet using the header bytes and the payload data
+        return new SerialPacket(header[0], header[1], header[2], header[3], payload);
     }
 }

@@ -3,10 +3,8 @@ import {DAPLink} from 'dapjs/lib/daplink';
 import {WebUSB} from 'dapjs/lib/transport/webusb';
 import {debug, DebugType} from "./Debug";
 import {SerialHandler} from "./SerialHandler";
-import {RequestHandler} from "./RequestHandler";
-import * as jspath from "jspath";
-import {processRESTRequest} from "./Translations";
-import {SerialPacket} from "./SerialPacket";
+import {unpack, pack} from 'bufferpack';
+import {RequestType, SerialPacket} from "./SerialPacket";
 
 const DEFAULT_BAUD = 115200;
 const DEFAULT_TRANSLATION_POLLING = 60000;
@@ -184,16 +182,19 @@ connectButton.on('click', () => {
         disconnect();
     }
 });
-
+let test = 0;
 /***
  * Event handler for clicking the flash button.
  *
  * Upon pressing, this button will flash the micro:Bit with the hex file generated from the portal.
  */
 flashButton.on('click', () => {
-    //console.log("Flashing currently not implemented");
+    console.log("Flashing currently not implemented");
 
-    let serialPacket = new SerialPacket(1, 139, 207, 2);
+    // TODO: Currently using this section for testing, this is where the flashing code will go
+    // targetDevice.flash(hexFile);
+
+    /*let serialPacket = new SerialPacket(1, 139, 207, 2);
     let responsePacket = new SerialPacket(1, 139, 207, 2);
     serialPacket.append("/share/historicalData/");
     serialPacket.append("30");
@@ -201,7 +202,10 @@ flashButton.on('click', () => {
     serialPacket.append("D22");
     serialPacket.append("c");
 
-    console.log(processRESTRequest(serialPacket, responsePacket, hub_variables["translations"]["json"]["share"], "POST"));
+    console.log(serialPacket.getFormattedPacket());
+    console.log(serialPacket.getFormattedPayloadParts().length);*/
+
+    /*console.log(processRESTRequest(serialPacket, responsePacket, hub_variables["translations"]["json"]["share"], "POST"));*/
 
     /*RequestHandler.processGETRequest("https://api.carbonintensity.org.uk/generation/")
         .then((response) => {

@@ -3,8 +3,7 @@ import {DAPLink} from 'dapjs/lib/daplink';
 import {WebUSB} from 'dapjs/lib/transport/webusb';
 import {debug, DebugType} from "./Debug";
 import {SerialHandler} from "./SerialHandler";
-import {unpack, pack} from 'bufferpack';
-import {RequestType, SerialPacket} from "./SerialPacket";
+import AuthAPIService from "./api/login";
 
 const DEFAULT_BAUD = 115200;
 const DEFAULT_TRANSLATION_POLLING = 60000;
@@ -13,6 +12,8 @@ const DEFAULT_STATUS = "Connect to a micro:bit and flash the bridging software";
 const statusText = $('#status');
 const connectButton = $('#connect');
 const flashButton = $('#flash');
+const loginButton = $('#loginButton');
+const logoutButton = $('#logout');
 
 let targetDevice: DAPLink;
 let serialNumber: string;
@@ -45,7 +46,7 @@ let hub_variables = {
  */
 async function getTranslations() {
     // if poll_updates is false and we haven't already grabbed the translations file, return
-    if(!hub_variables["translations"]["poll_updates"] && Object.entries(hub_variables["translations"]["json"]).length !== 0)
+    if (!hub_variables["translations"]["poll_updates"] && Object.entries(hub_variables["translations"]["json"]).length !== 0)
         return;
 
     debug("Checking for translations updates", DebugType.DEBUG);
@@ -60,7 +61,7 @@ async function getTranslations() {
             debug(`Error receiving translations`, DebugType.ERROR);
         },
         success: (response) => {
-            if(hub_variables["translations"]["json"] == {} || response["version"] != hub_variables["translations"]["json"]["version"]) {
+            if (hub_variables["translations"]["json"] == {} || response["version"] != hub_variables["translations"]["json"]["version"]) {
                 debug(`Translations have updated! (v${response["version"]})`, DebugType.DEBUG);
                 hub_variables["translations"]["json"] = response;
             }
@@ -144,7 +145,7 @@ function disconnect() {
             .catch((e) => {
                 console.log(ERROR_MESSAGE);
             });
-    } catch(e) {
+    } catch (e) {
         console.log(ERROR_MESSAGE);
     }
 
@@ -222,6 +223,41 @@ flashButton.on('click', () => {
  */
 navigator.usb.addEventListener('disconnect', (device) => {
     // check if the bridging micro:bit is the one that was disconnected
-    if(device.device.serialNumber == serialNumber)
+    if (device.device.serialNumber == serialNumber)
         disconnect();
 });
+
+/**
+ * Login button click handler
+ */
+loginButton.on('click', () => {
+    const data = {
+        username: $('#userName').val().toString(),
+        password: $('#inputPassword').val().toString()
+    };
+    AuthAPIService.login(data.username, data.password).then(() => {
+        window.location.reload()
+    }).catch((error) => {
+        $('#loginError').show();
+        $('#loginError').text(error.message);
+    });
+});
+
+logoutButton.on('click', () => {
+    AuthAPIService.cleanTokens();
+    window.location.reload()
+});
+
+/**
+ * Show/hide main content based on token availability
+ * TODO: use router library to handle it properly
+ */
+window.onload = () => {
+    if (AuthAPIService.AccessToken) {
+        $('#loginpage').hide();
+        $('#main').show();
+    } else {
+        $('#loginpage').show();
+        $('#main').hide();
+    }
+};

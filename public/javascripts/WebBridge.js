@@ -13,12 +13,15 @@ const daplink_1 = require("dapjs/lib/daplink");
 const webusb_1 = require("dapjs/lib/transport/webusb");
 const Debug_1 = require("./Debug");
 const SerialHandler_1 = require("./SerialHandler");
+const login_1 = require("./api/login");
 const DEFAULT_BAUD = 115200;
 const DEFAULT_TRANSLATION_POLLING = 60000;
 const DEFAULT_STATUS = "Connect to a micro:bit and flash the bridging software";
 const statusText = $('#status');
 const connectButton = $('#connect');
 const flashButton = $('#flash');
+const loginButton = $('#loginButton');
+const logoutButton = $('#logout');
 let targetDevice;
 let serialNumber;
 let serialHandler;
@@ -208,4 +211,37 @@ navigator.usb.addEventListener('disconnect', (device) => {
     if (device.device.serialNumber == serialNumber)
         disconnect();
 });
+/**
+ * Login button click handler
+ */
+loginButton.on('click', () => {
+    const data = {
+        username: $('#userName').val().toString(),
+        password: $('#inputPassword').val().toString()
+    };
+    login_1.default.login(data.username, data.password).then(() => {
+        window.location.reload();
+    }).catch((error) => {
+        $('#loginError').show();
+        $('#loginError').text(error.message);
+    });
+});
+logoutButton.on('click', () => {
+    login_1.default.cleanTokens();
+    window.location.reload();
+});
+/**
+ * Show/hide main content based on token availability
+ * TODO: use router library to handle it properly
+ */
+window.onload = () => {
+    if (login_1.default.AccessToken) {
+        $('#loginpage').hide();
+        $('#main').show();
+    }
+    else {
+        $('#loginpage').show();
+        $('#main').hide();
+    }
+};
 //# sourceMappingURL=WebBridge.js.map

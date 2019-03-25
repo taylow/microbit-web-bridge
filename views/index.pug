@@ -1,39 +1,58 @@
 extends layout
 block head
-  script(src="https://code.jquery.com/jquery-3.3.1.min.js",
-  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=",
-  crossorigin="anonymous")
+    script(src="https://code.jquery.com/jquery-3.3.1.min.js",
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=",
+        crossorigin="anonymous")
+    script(src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js")
 
 block content
+    div#loginpage
+        .container
+            .row.justify-content-center
+                .col-lg-5
+                    #loginForm.card.card-signin
+                        .card-body
+                            h5.card-title.text-center Login
+                            form.form-signin
+                                .form-label-group
+                                    input#userName.form-control(type='text' placeholder='Email address' required='' autofocus='')
+                                    label(for='userName') Username
+                                .form-label-group
+                                    input#inputPassword.form-control(type='password' placeholder='Password' required='')
+                                    label(for='inputPassword') Password
+                                div#loginError.text-danger Some message
+                                button(type='button')#loginButton.btn.btn-lg.btn-primary.btn-block.text-uppercase Login
 
-  h1= title
+    div#main
+        h1= title
 
-  div.content
-    //div#usb
-    div#microbit
-      div#led-container
+        div.content
+            //div#usb
+            div#microbit
+                div#led-container
 
-  div#terminal-container
-    input(type="checkbox")#terminal-checkbox
-    label(for="terminal-checkbox")#terminal-toggle &#9776;
-    div#terminal-box
-      div#terminal-header Terminal
-    div#terminal-contents
+        div#terminal-container
+            input(type="checkbox")#terminal-checkbox
+            label(for="terminal-checkbox")#terminal-toggle &#9776;
+            div#terminal-box
+                div#terminal-header Terminal
+            div#terminal-contents
 
-  div#history-container
-    input(type="checkbox")#history-checkbox
-    label(for="history-checkbox")#history-toggle &#9776;
-    div#history-box
-      div#history-header History
+        div#history-container
+            input(type="checkbox")#history-checkbox
+            label(for="history-checkbox")#history-toggle &#9776;
+            div#history-box
+                div#history-header History
 
-  div#status
-    text Connect to a micro:bit and flash the bridging software
+        div#status
+            text Connect to a micro:bit and flash the bridging software
 
-  dif#footer
-    div#controls
-      button#connect Connect
-      button#flash Flash micro:bit
+        dif#footer
+            div#controls
+                button#connect Connect
+                button#flash Flash micro:bit
+                button#logout Logout
 
-  //script var exports = {}; // hack to bypass typescript > js conversion error
-  script(type="module", src="javascripts/sidebars.js")
-  script(type="module", src="javascripts/WebBridge.bundle.js")
+    //script var exports = {}; // hack to bypass typescript > js conversion error
+    script(type="module", src="javascripts/sidebars.js")
+    script(type="module", src="javascripts/WebBridge.bundle.js")

@@ -17191,8 +17191,8 @@ let hub_variables = {
         "port": 8001
     },
     "translations": {
-        //"url": "https://raw.githubusercontent.com/lancaster-university/rest-radio/master/hub/translations.json",
-        "url": "/translations",
+        "url": "https://raw.githubusercontent.com/Taylor-Woodcock/microbit-web-bridge/master/translations.json",
+        //"url": "/translations",
         "poll_updates": false,
         "poll_time": DEFAULT_TRANSLATION_POLLING,
         "json": {}
@@ -17337,6 +17337,8 @@ let test = 0;
  */
 flashButton.on('click', () => {
     console.log("Flashing currently not implemented");
+    // TODO: Currently using this section for testing, this is where the flashing code will go
+    // targetDevice.flash(hexFile);
     /*let serialPacket = new SerialPacket(1, 139, 207, 2);
     let responsePacket = new SerialPacket(1, 139, 207, 2);
     serialPacket.append("/share/historicalData/");

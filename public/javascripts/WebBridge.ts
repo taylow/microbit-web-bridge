@@ -29,8 +29,7 @@ let hub_variables = {
         "port": 8001
     },
     "translations": {
-        //"url": "https://raw.githubusercontent.com/lancaster-university/rest-radio/master/hub/translations.json",
-        "url": "/translations",
+        "url": "https://raw.githubusercontent.com/Taylor-Woodcock/microbit-web-bridge/master/translations.json",
         "poll_updates": false,
         "poll_time": DEFAULT_TRANSLATION_POLLING,
         "json": {}
@@ -182,7 +181,7 @@ connectButton.on('click', () => {
         disconnect();
     }
 });
-let test = 0;
+
 /***
  * Event handler for clicking the flash button.
  *

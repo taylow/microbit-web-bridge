@@ -50,14 +50,14 @@ export default class AbstractApiService {
   injectAxiosInterceptors(key) {
     const keys = Array.isArray(key) ? key : [key];
 
-    /* Interseptors callbacks */
+    /* Interceptors callbacks */
     const authInterceptorCallback = config =>
         _.merge(config, {
           headers: {
             authorization: `Bearer ${this.AccessToken}`,
           },
         });
-    /* Interseptors callbacks */
+    /* Interceptors callbacks */
 
     for (const interceptorKey of keys) {
       let interceptor = null;

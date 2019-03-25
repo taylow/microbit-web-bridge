@@ -1,8 +1,6 @@
-/* Site Values */
-export const DOMAIN = 'https://energyinschools.co.uk';
-export const BASE_URL = `${DOMAIN}/api/v1`;
-export const BLOCK_EDITOR_URL = `${DOMAIN}/static/makecode-blockeditor/index.html`;
-export const REFRESH_TOKEN_URL = `${DOMAIN}/api/v1/token/refresh/`;
+// TODO for local development. Request to stage/prod are restricted by CORS
+// export const API_ENDPOINT = 'http://127.0.0.1:4000/api/v1';
+export const API_ENDPOINT = 'https://staging.energyinschools.co.uk/api/v1';
 
 /* Token Types */
 export const TOKEN_TYPE = Object.freeze({
@@ -11,13 +9,15 @@ export const TOKEN_TYPE = Object.freeze({
 });
 
 /* Roles */
-export const ADMIN_ROLE = 'admin'; // todo: use nested namespace (like enum)
-export const SLE_ADMIN_ROLE = 'sle_admin';
-export const SEM_ADMIN_ROLE = 'sem_admin';
-export const TEACHER_ROLE = 'teacher';
-export const PUPIL_ROLE = 'pupil';
-export const ES_ADMIN_ROLE = 'es_admin';
-export const ES_USER = 'es_user';
+export enum RoleNames {
+    ADMIN = 'admin',
+    SLE_ADMIN = 'sle_admin',
+    SEM_ADMIN = 'sem_admin',
+    TEACHER = 'teacher',
+    PUPIL = 'pupil',
+    ES_ADMIN = 'es_admin',
+    ES_USER = 'es_user',
+}
 
 /* Debug Constants */
 export const DEBUG = true;

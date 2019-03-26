@@ -34660,13 +34660,13 @@ class AbstractApiService {
     }
     injectAxiosInterceptors(key) {
         const keys = Array.isArray(key) ? key : [key];
-        /* Interseptors callbacks */
+        /* Interceptors callbacks */
         const authInterceptorCallback = config => _.merge(config, {
             headers: {
                 authorization: `Bearer ${this.AccessToken}`,
             },
         });
-        /* Interseptors callbacks */
+        /* Interceptors callbacks */
         for (const interceptorKey of keys) {
             let interceptor = null;
             switch (interceptorKey) {
@@ -34767,7 +34767,7 @@ class AuthAPIService extends core_1.default {
             }
             if (![Config_1.RoleNames.TEACHER, Config_1.RoleNames.SLE_ADMIN].includes(this.RoleName)) {
                 this.cleanTokens();
-                throw new Error("You dont'n have permissions to view this page");
+                throw new Error("You don't have permissions to view this page");
             }
             return true;
         });

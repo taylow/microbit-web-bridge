@@ -9,7 +9,7 @@ block content
     div#loginpage
         .container
             .row.justify-content-center
-                .col-lg-5
+                .col-12.col-lg-5
                     #loginForm.card.card-signin
                         .card-body
                             h5.card-title.text-center Login
@@ -26,12 +26,15 @@ block content
     div#main
         h1= title
 
-        div.content
-            //div#usb
-            div#microbit
-                div#led-container
+        .container
+            .row.justify-content-center
+                div(style="max-width:400px;padding-top:30px")
+                    img(src='../public/images/microbit.png').img-fluid
 
-        div#terminal-container
+        div#status
+            text Connect to a micro:bit and flash the bridging software
+
+        .div#terminal-container
             input(type="checkbox")#terminal-checkbox
             label(for="terminal-checkbox")#terminal-toggle &#9776;
             div#terminal-box
@@ -44,14 +47,14 @@ block content
             div#history-box
                 div#history-header History
 
-        div#status
-            text Connect to a micro:bit and flash the bridging software
+
 
         dif#footer
-            div#controls
-                button#connect Connect
-                button#flash Flash micro:bit
-                button#logout Logout
+            .container
+                #controls.row.justify-content-center
+                    button#connect Connect
+                    button#flash Flash micro:bit
+                    button#logout Logout
 
     //script var exports = {}; // hack to bypass typescript > js conversion error
     script(type="module", src="javascripts/sidebars.js")

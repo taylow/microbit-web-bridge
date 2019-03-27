@@ -31,7 +31,7 @@ export enum SlipChar {
 }
 
 export const HEADER_LENGTH = 5;
-export const HEADER_STRUCTURE = "<BBHB";
+export const HEADER_STRUCTURE = "<BBHB"; // used for packing and unpacking the header values (Little-endian Byte Byte Short Byte)
 
 export class SerialPacket implements Packet {
     app_id: number;
@@ -113,10 +113,20 @@ export class SerialPacket implements Packet {
     public getFormattedPayloadParts(): number[] {
         let formattedPayload: any = [];
 
+        /**
+         * Checks if a value is an integer.
+         *
+         * @param n Value to check is an integer
+         */
         function isInt(n){
             return Number(n) === n && n % 1 === 0;
         }
 
+        /**
+         * Checks if a value is a float.
+         *
+         * @param n Value to check is a float
+         */
         function isFloat(n){
             return Number(n) === n && n % 1 !== 0;
         }
@@ -126,16 +136,16 @@ export class SerialPacket implements Packet {
             let value: unknown = this.payload[i];
 
             switch(typeof value) {
-                case "number": // if int or float
+                case "number": // int or float
                     if(isInt(value)) {
-                        formattedPayload.push(pack("<Bi", [SubType.SUBTYPE_INT, value]))
+                        formattedPayload.push(pack("<Bi", [SubType.SUBTYPE_INT, value])); // pack integer into a byte array and append it to the formatted payload
                     } else if(isFloat(value)) {
-                        formattedPayload.push(pack("<Bf", [SubType.SUBTYPE_FLOAT, value]))
-                    }
+                        formattedPayload.push(pack("<Bf", [SubType.SUBTYPE_FLOAT, value])); // pack float into a byte array and append it to the formatted payload
+                     }
                     break;
 
-                case "string": // if string
-                    formattedPayload.push(pack(`<B${value.length + 1}s`, [SubType.SUBTYPE_STRING, (value + '\0')]));
+                case "string": // string
+                    formattedPayload.push(pack(`<B${value.length + 1}s`, [SubType.SUBTYPE_STRING, (value + '\0')])); // pack string into a byte array
                     break;
 
                 default:
@@ -173,7 +183,7 @@ export class SerialPacket implements Packet {
             offset += item.length;
         });
 
-        return Array.from(finalPacket).concat(SlipChar.SLIP_END);
+        return Array.from(finalPacket).concat(SlipChar.SLIP_END); // condense into one non-typed array and append a SLIP_END character
     }
 
     /***

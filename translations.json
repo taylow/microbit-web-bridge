@@ -512,7 +512,7 @@
     "carbon":{
         "GET" : {
             "apiPrefix":"get",
-            "baseURL":"https://api.carbonintensity.org.uk/%api_endpoint?=intesity%",
+            "baseURL":"https://api.carbonintensity.org.uk/%api_endpoint?=intensity%",
             "microbitQueryString":"/%endpoint%/%unit?%",
             "compulsoryParameters":[
                 {
@@ -540,7 +540,7 @@
                     ]
                 },
                 "genmix":{
-                    "jspath": ".data.generationmix.{.fuel == '%unit%'}.perclel",
+                    "jspath": ".data.generationmix.{.fuel === '%unit%'}.perc",
                     "queryObject": {
                         "api_endpoint": "generation"
                     },

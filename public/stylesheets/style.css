@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css?family=Open+Sans');
 
 body {
-    padding: 50px;
     font-family: 'Open Sans', sans-serif;
 }
 
@@ -30,6 +29,12 @@ h1 {
     overflow: hidden;
 }
 
+@media (max-width: 480px) {
+    #status {
+        font-size: 16px;
+    }
+}
+
 #footer {
     width: 50%;
     left: 25%;
@@ -37,35 +42,32 @@ h1 {
     text-align: center;
     position: fixed;
     background-color: #cccccc;
-    padding: 30px 30px 10px;
+    padding: 10px 20px 10px;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
 }
 
-#controls {
-    width: 100%;
-    height: 50px;
-    margin: auto auto 20px;
-    display: flex;
-    flex-flow: row wrap;
-    justify-content: space-around;
+@media (max-width: 800px) {
+    #footer {
+        width: 90%;
+        left: 5%;
+    }
 }
 
 #controls button {
     background-color: #0190DC;
     color: white;
-    padding: 12px 20px;
-    width: 25%;
+    padding: 8px 15px;
+    margin: 5px 4px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    float: right;
 }
 
 #microbit {
     position: relative;
+    max-width: 800px;
     width: 100%;
-    heigh: 1000px;
     padding-bottom: 50%;
     background-image: url('../images/microbit.png');
     background-repeat: no-repeat;
@@ -169,6 +171,20 @@ h1 {
     -ms-transition: left 1s ease-in-out;
     -moz-transition: left 1s ease-in-out;
     -webkit-transition: left 1s ease-in-out;
+}
+
+@media (max-width: 480px) {
+    #terminal-container {
+        top: 0;
+        width: 80%;
+        left: -80%;
+    }
+
+    #history-container {
+        top: 0;
+        width: 80%;
+        left: 100%;
+    }
 }
 
 #history-toggle {

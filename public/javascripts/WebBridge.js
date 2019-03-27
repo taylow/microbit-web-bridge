@@ -283,7 +283,7 @@ window.onload = () => {
         $('#main').hide();
     }
     // TODO: temporarily overwritten for localhost development
-    $('#loginpage').hide();
-    $('#main').show();
+    //$('#loginpage').hide();
+    //$('#main').show();
 };
 //# sourceMappingURL=WebBridge.js.map

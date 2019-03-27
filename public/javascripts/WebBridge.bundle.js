@@ -35161,12 +35161,13 @@ class RequestHandler {
                 //TODO: Temporary hardcoded parts for temporary functionality. This will be replaced with the translations
                 switch (queryStrMap["service"]) {
                     case "share":
-                        console.log("SHARE");
                         if (queryStrMap["endpoint"] == "fetchData") {
                             try {
                                 axios_1.default.get(`${newURL}${queryStrMap["unit"]}`, { headers: headers })
                                     .then((success) => {
-                                    responsePacket.append(`${JSON.parse(success.data.body)["value"]}`);
+                                    console.log(success);
+                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
+                                    responsePacket.append(data);
                                     responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                     resolve(responsePacket);
                                 })
@@ -35225,7 +35226,61 @@ class RequestHandler {
                             }
                         }
                         break;
-                    //case "iot":
+                    case "iot":
+                        let jsonData = {
+                            "value": null
+                        };
+                        if (requestType == "POST") {
+                            try {
+                                newURL = newURL.replace("^device^", serialPacket.get(1));
+                                if (queryStrMap["endpoint"] == "bulbState" || queryStrMap["endpoint"] == "switchState")
+                                    jsonData.value = serialPacket.get(2) == 0 ? "off" : "on";
+                                else
+                                    jsonData.value = String(serialPacket.get(2));
+                                axios_1.default.post(`${newURL}`, jsonData, { headers: headers })
+                                    .then((success) => {
+                                    responsePacket.append(jsonData.value);
+                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                    resolve(responsePacket);
+                                })
+                                    .catch((error) => {
+                                    console.log(error.response);
+                                    if (error.response.status == 404) {
+                                        reject("DEVICE NOT FOUND");
+                                    }
+                                    else {
+                                        reject("COULD NOT REACH DEVICE");
+                                    }
+                                });
+                            }
+                            catch (e) {
+                                reject("COULD NOT REACH DEVICE");
+                            }
+                        }
+                        else if (requestType == "GET") {
+                            try {
+                                newURL = newURL.replace("^device^", queryStrMap["device"]);
+                                console.log(newURL);
+                                console.log(queryStrMap);
+                                axios_1.default.get(`${newURL}`, { headers: headers })
+                                    .then((success) => {
+                                    console.log(success);
+                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
+                                    responsePacket.append(data);
+                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                    resolve(responsePacket);
+                                })
+                                    .catch((error) => {
+                                    console.log("ERROR" + error);
+                                    reject("COULD NOT GET VARIABLE");
+                                    return;
+                                });
+                            }
+                            catch (e) {
+                                reject("COULD NOT REACH DEVICE");
+                            }
+                        }
+                        break;
                     //case "energy":
                     //case "energyMeter":
                     //case "weather":
@@ -35235,7 +35290,7 @@ class RequestHandler {
                                 axios_1.default.get(`${newURL}`)
                                     .then((success) => {
                                     console.log(success);
-                                    let data = jspath.apply(endpoint["jspath"], success.data)[0];
+                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
                                     responsePacket.append(data);
                                     responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                     resolve(responsePacket);
@@ -35253,7 +35308,7 @@ class RequestHandler {
                                 axios_1.default.get(`${newURL}`)
                                     .then((success) => {
                                     console.log(success);
-                                    let data = jspath.apply(endpoint["jspath"], success.data)[0];
+                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
                                     responsePacket.append(data);
                                     responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                     resolve(responsePacket);
@@ -35271,7 +35326,7 @@ class RequestHandler {
                                 axios_1.default.get(`${newURL}`)
                                     .then((success) => {
                                     console.log(success);
-                                    let data = Number(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
+                                    let data = String(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
                                     console.log(data);
                                     responsePacket.append(data);
                                     responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
@@ -35287,7 +35342,7 @@ class RequestHandler {
                         }
                         break;
                     default:
-                        reject(`Unknown service ${queryStrMap["service"]}`);
+                        reject(`UNKNOWN SERVICE ${queryStrMap["service"]}`);
                 }
             }
             catch (e) {
@@ -35758,13 +35813,14 @@ class SerialPacket {
      * while retaining the request type (e.g. REST, hello, etc.)
      */
     clearAndError(errorMessage) {
-        this.request_type = 0;
+        //this.request_type = 0;
         // clear all other status codes
-        for (let status in RequestStatus) {
+        /*for(let status in RequestStatus) {
             this.clearRequestBit(Number(status));
-        }
+        }*/
         // set status code to REQUEST_STATUS_ERROR
-        this.setRequestBit(RequestStatus.REQUEST_STATUS_ERROR);
+        //this.setRequestBit(RequestStatus.REQUEST_STATUS_ERROR); //FIXME: The Python hub uses REQUEST_STATUS_OK to reply with an error
+        this.setRequestBit(RequestStatus.REQUEST_STATUS_OK); //FIXME: The Python hub uses REQUEST_STATUS_OK to reply with an error
         // clear payload and add an error message if necessary
         this.clear();
         if (errorMessage.length > 0)
@@ -36136,8 +36192,8 @@ window.onload = () => {
         $('#main').hide();
     }
     // TODO: temporarily overwritten for localhost development
-    $('#loginpage').hide();
-    $('#main').show();
+    //$('#loginpage').hide();
+    //$('#main').show();
 };
 
 },{"./Debug":50,"./SerialHandler":52,"./api/login":56,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":42}],55:[function(require,module,exports){

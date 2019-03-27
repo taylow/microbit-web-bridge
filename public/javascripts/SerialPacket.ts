@@ -223,14 +223,15 @@ export class SerialPacket implements Packet {
      * while retaining the request type (e.g. REST, hello, etc.)
      */
     public clearAndError(errorMessage?: string): SerialPacket {
-        this.request_type = 0;
+        //this.request_type = 0;
         // clear all other status codes
-        for(let status in RequestStatus) {
+        /*for(let status in RequestStatus) {
             this.clearRequestBit(Number(status));
-        }
+        }*/
 
         // set status code to REQUEST_STATUS_ERROR
-        this.setRequestBit(RequestStatus.REQUEST_STATUS_ERROR);
+        //this.setRequestBit(RequestStatus.REQUEST_STATUS_ERROR); //FIXME: The Python hub uses REQUEST_STATUS_OK to reply with an error
+        this.setRequestBit(RequestStatus.REQUEST_STATUS_OK); //FIXME: The Python hub uses REQUEST_STATUS_OK to reply with an error
 
         // clear payload and add an error message if necessary
         this.clear();

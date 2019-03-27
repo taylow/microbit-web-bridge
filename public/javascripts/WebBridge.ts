@@ -309,6 +309,6 @@ window.onload = () => {
     }
 
     // TODO: temporarily overwritten for localhost development
-    $('#loginpage').hide();
-    $('#main').show();
+    //$('#loginpage').hide();
+    //$('#main').show();
 };

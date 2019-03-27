@@ -540,7 +540,7 @@
                     ]
                 },
                 "genmix":{
-                    "jspath": ".data.generationmix.{.fuel == '%unit%'}.perclel",
+                    "jspath": ".data.generationmix.{.fuel === '%unit%'}.perc",
                     "queryObject": {
                         "api_endpoint": "generation"
                     },

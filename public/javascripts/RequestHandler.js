@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const jspath = require("jspath");
 const SerialPacket_1 = require("./SerialPacket");
 const Debug_1 = require("./Debug");
 const axios_1 = require("axios");
@@ -197,14 +198,66 @@ class RequestHandler {
                             }
                         }
                         break;
-                    case "init":
-                    case "iot":
-                    case "energy":
-                    case "energyMeter":
-                    case "weather":
+                    //case "iot":
+                    //case "energy":
+                    //case "energyMeter":
+                    //case "weather":
                     case "carbon":
-                    case "iss":
-                        reject(`Unimplimented service`);
+                        if (queryStrMap["endpoint"] == "index") {
+                            try {
+                                axios_1.default.get(`${newURL}`)
+                                    .then((success) => {
+                                    console.log(success);
+                                    let data = jspath.apply(endpoint["jspath"], success.data)[0];
+                                    responsePacket.append(data);
+                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                    resolve(responsePacket);
+                                })
+                                    .catch((error) => {
+                                    reject("COULD NOT GET DATA");
+                                });
+                            }
+                            catch (e) {
+                                reject("COULD NOT GET DATA");
+                            }
+                        }
+                        else if (queryStrMap["endpoint"] == "value") {
+                            try {
+                                axios_1.default.get(`${newURL}`)
+                                    .then((success) => {
+                                    console.log(success);
+                                    let data = jspath.apply(endpoint["jspath"], success.data)[0];
+                                    responsePacket.append(data);
+                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                    resolve(responsePacket);
+                                })
+                                    .catch((error) => {
+                                    reject("COULD NOT GET DATA");
+                                });
+                            }
+                            catch (e) {
+                                reject("COULD NOT GET DATA");
+                            }
+                        }
+                        else if (queryStrMap["endpoint"] == "genmix") {
+                            try {
+                                axios_1.default.get(`${newURL}`)
+                                    .then((success) => {
+                                    console.log(success);
+                                    let data = Number(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
+                                    console.log(data);
+                                    responsePacket.append(data);
+                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                    resolve(responsePacket);
+                                })
+                                    .catch((error) => {
+                                    reject("COULD NOT GET DATA");
+                                });
+                            }
+                            catch (e) {
+                                reject("COULD NOT GET DATA");
+                            }
+                        }
                         break;
                     default:
                         reject(`Unknown service ${queryStrMap["service"]}`);

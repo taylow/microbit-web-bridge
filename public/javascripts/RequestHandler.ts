@@ -207,14 +207,67 @@ export class RequestHandler {
                         }
                         break;
 
-                    case "init":
-                    case "iot":
-                    case "energy":
-                    case "energyMeter":
-                    case "weather":
+                    //case "iot":
+                    //case "energy":
+                    //case "energyMeter":
+                    //case "weather":
                     case "carbon":
-                    case "iss":
-                        reject(`Unimplimented service`);
+                        if(queryStrMap["endpoint"] == "index") {
+                            try {
+                                axios.get(`${newURL}`)
+                                    .then((success) => {
+                                        console.log(success);
+
+                                        let data = jspath.apply(endpoint["jspath"], success.data)[0];
+
+                                        responsePacket.append(data);
+                                        responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
+                                        resolve(responsePacket);
+                                    })
+                                    .catch((error) => {
+                                        reject("COULD NOT GET DATA");
+                                    });
+                            } catch(e) {
+                                reject("COULD NOT GET DATA");
+                            }
+                        } else if(queryStrMap["endpoint"] == "value") {
+                            try {
+                                axios.get(`${newURL}`)
+                                    .then((success) => {
+                                        console.log(success);
+
+                                        let data = jspath.apply(endpoint["jspath"], success.data)[0];
+
+                                        responsePacket.append(data);
+                                        responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
+                                        resolve(responsePacket);
+                                    })
+                                    .catch((error) => {
+                                        reject("COULD NOT GET DATA");
+                                    });
+                            } catch(e) {
+                                reject("COULD NOT GET DATA");
+                            }
+                        } else if(queryStrMap["endpoint"] == "genmix") {
+                            try {
+                                axios.get(`${newURL}`)
+                                    .then((success) => {
+                                        console.log(success);
+                                        let data: number = Number(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
+
+                                        console.log(data);
+
+                                        responsePacket.append(data);
+                                        responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
+                                        resolve(responsePacket);
+                                    })
+                                    .catch((error) => {
+                                        reject("COULD NOT GET DATA");
+                                    });
+                            } catch(e) {
+                                reject("COULD NOT GET DATA");
+                            }
+                        }
                         break;
 
                     default:

@@ -31,7 +31,7 @@ var SlipChar;
     SlipChar[SlipChar["SLIP_ESC_ESC"] = 221] = "SLIP_ESC_ESC";
 })(SlipChar = exports.SlipChar || (exports.SlipChar = {}));
 exports.HEADER_LENGTH = 5;
-exports.HEADER_STRUCTURE = "<BBHB";
+exports.HEADER_STRUCTURE = "<BBHB"; // used for packing and unpacking the header values (Little-endian Byte Byte Short Byte)
 class SerialPacket {
     /***
      * Creates a SerialPacket and initialises header and payload variables.
@@ -97,9 +97,19 @@ class SerialPacket {
      */
     getFormattedPayloadParts() {
         let formattedPayload = [];
+        /**
+         * Checks if a value is an integer.
+         *
+         * @param n Value to check is an integer
+         */
         function isInt(n) {
             return Number(n) === n && n % 1 === 0;
         }
+        /**
+         * Checks if a value is a float.
+         *
+         * @param n Value to check is a float
+         */
         function isFloat(n) {
             return Number(n) === n && n % 1 !== 0;
         }
@@ -107,16 +117,16 @@ class SerialPacket {
         for (let i = 0; i < this.payload.length; i++) {
             let value = this.payload[i];
             switch (typeof value) {
-                case "number": // if int or float
+                case "number": // int or float
                     if (isInt(value)) {
-                        formattedPayload.push(bufferpack_1.pack("<Bi", [SubType.SUBTYPE_INT, value]));
+                        formattedPayload.push(bufferpack_1.pack("<Bi", [SubType.SUBTYPE_INT, value])); // pack integer into a byte array and append it to the formatted payload
                     }
                     else if (isFloat(value)) {
-                        formattedPayload.push(bufferpack_1.pack("<Bf", [SubType.SUBTYPE_FLOAT, value]));
+                        formattedPayload.push(bufferpack_1.pack("<Bf", [SubType.SUBTYPE_FLOAT, value])); // pack float into a byte array and append it to the formatted payload
                     }
                     break;
-                case "string": // if string
-                    formattedPayload.push(bufferpack_1.pack(`<B${value.length + 1}s`, [SubType.SUBTYPE_STRING, (value + '\0')]));
+                case "string": // string
+                    formattedPayload.push(bufferpack_1.pack(`<B${value.length + 1}s`, [SubType.SUBTYPE_STRING, (value + '\0')])); // pack string into a byte array
                     break;
                 default:
                     //TODO: Implement Events
@@ -149,7 +159,7 @@ class SerialPacket {
             // @ts-ignore
             offset += item.length;
         });
-        return Array.from(finalPacket).concat(SlipChar.SLIP_END);
+        return Array.from(finalPacket).concat(SlipChar.SLIP_END); // condense into one non-typed array and append a SLIP_END character
     }
     /***
      * Calculates and returns the length total of the packet before any SLIP has been added.

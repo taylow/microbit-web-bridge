@@ -33737,50 +33737,52 @@ class RequestHandler {
                 let headers = {
                     "school-id": this.hub_variables["credentials"]["school_id"],
                     "pi-id": this.hub_variables["credentials"]["pi_id"],
-                    "content-type": "application/json"
+                    'Content-Type': 'application/json',
                 };
                 //TODO: Temporary hardcoded parts for temporary functionality. This will be replaced with the translations
-                /*switch(queryStrMap["service"]) {
+                switch (queryStrMap["service"]) {
                     case "share":
                         console.log("SHARE");
-
-                        if(queryStrMap["endpoint"] == "fetchData") {
-                            try{
-                                axios.get(`${this.hub_variables["proxy"]["address"]}/GET/?url=${newURL}${queryStrMap["unit"]}`, {headers: headers})
+                        if (queryStrMap["endpoint"] == "fetchData") {
+                            try {
+                                axios_1.default.get(`${newURL}${queryStrMap["unit"]}`, { headers: headers })
                                     .then((success) => {
-                                        responsePacket.append(`${JSON.parse(success.data.body)["value"]}`);
-                                        responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
-                                        resolve(responsePacket);
-                                    })
+                                    responsePacket.append(`${JSON.parse(success.data.body)["value"]}`);
+                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                    resolve(responsePacket);
+                                })
                                     .catch((error) => {
-                                        console.log("ERROR" + error);
-                                        reject("COULD NOT GET VARIABLE");
-                                        return;
-                                    });
-                            } catch(e) {
+                                    console.log("ERROR" + error);
+                                    reject("COULD NOT GET VARIABLE");
+                                    return;
+                                });
+                            }
+                            catch (e) {
                                 reject("COULD NOT GET VARIABLE");
                             }
-                        } else if(queryStrMap["endpoint"] == "shareData") {
+                        }
+                        else if (queryStrMap["endpoint"] == "shareData") {
                             try {
                                 let jsonData = {
                                     "key": serialPacket.get(2),
                                     "value": serialPacket.get(1),
-                                    "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL") //FIXME: For some reason this value is always 0 from the micro:bit
+                                    "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL")
                                 };
-
-                                axios.post(`${this.hub_variables["proxy"]["address"]}/POST/?url=${newURL}${serialPacket.get(2)}`, jsonData, {headers: headers})
+                                axios_1.default.post(`${newURL}${serialPacket.get(2)}`, jsonData, { headers: headers })
                                     .then((success) => {
-                                        responsePacket.append("DATA SENT");
-                                        responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
-                                        resolve(responsePacket);
-                                    })
+                                    responsePacket.append("DATA SENT");
+                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                    resolve(responsePacket);
+                                })
                                     .catch((error) => {
-                                        reject("COULD NOT SHARE DATA");
-                                    });
-                            } catch(e) {
+                                    reject("COULD NOT SHARE DATA");
+                                });
+                            }
+                            catch (e) {
                                 reject("COULD NOT SHARE DATA");
                             }
-                        } else if(queryStrMap["endpoint"] == "historicalData") {
+                        }
+                        else if (queryStrMap["endpoint"] == "historicalData") {
                             try {
                                 let jsonData = {
                                     "namespace": serialPacket.get(3),
@@ -33789,22 +33791,21 @@ class RequestHandler {
                                     "unit": serialPacket.get(4),
                                     "value": Number(serialPacket.get(1))
                                 };
-
-                                axios.post(`${this.hub_variables["proxy"]["address"]}/POST/?url=${newURL}`, jsonData, {headers: headers})
+                                axios_1.default.post(`${newURL}`, jsonData, { headers: headers })
                                     .then((success) => {
-                                        responsePacket.append("DATA SENT");
-                                        responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
-                                        resolve(responsePacket);
-                                    })
+                                    responsePacket.append("DATA SENT");
+                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                    resolve(responsePacket);
+                                })
                                     .catch((error) => {
-                                        reject("COULD NOT SHARE DATA");
-                                    });
-                            } catch(e) {
+                                    reject("COULD NOT SHARE DATA");
+                                });
+                            }
+                            catch (e) {
                                 reject("COULD NOT SHARE DATA");
                             }
                         }
                         break;
-
                     case "init":
                     case "iot":
                     case "energy":
@@ -33814,10 +33815,9 @@ class RequestHandler {
                     case "iss":
                         reject(`Unimplimented service`);
                         break;
-
                     default:
                         reject(`Unknown service ${queryStrMap["service"]}`);
-                }*/
+                }
             }
             catch (e) {
                 console.log(e);
@@ -34125,7 +34125,7 @@ var SlipChar;
     SlipChar[SlipChar["SLIP_ESC_ESC"] = 221] = "SLIP_ESC_ESC";
 })(SlipChar = exports.SlipChar || (exports.SlipChar = {}));
 exports.HEADER_LENGTH = 5;
-exports.HEADER_STRUCTURE = "<BBHB";
+exports.HEADER_STRUCTURE = "<BBHB"; // used for packing and unpacking the header values (Little-endian Byte Byte Short Byte)
 class SerialPacket {
     /***
      * Creates a SerialPacket and initialises header and payload variables.
@@ -34191,9 +34191,19 @@ class SerialPacket {
      */
     getFormattedPayloadParts() {
         let formattedPayload = [];
+        /**
+         * Checks if a value is an integer.
+         *
+         * @param n Value to check is an integer
+         */
         function isInt(n) {
             return Number(n) === n && n % 1 === 0;
         }
+        /**
+         * Checks if a value is a float.
+         *
+         * @param n Value to check is a float
+         */
         function isFloat(n) {
             return Number(n) === n && n % 1 !== 0;
         }
@@ -34201,16 +34211,16 @@ class SerialPacket {
         for (let i = 0; i < this.payload.length; i++) {
             let value = this.payload[i];
             switch (typeof value) {
-                case "number": // if int or float
+                case "number": // int or float
                     if (isInt(value)) {
-                        formattedPayload.push(bufferpack_1.pack("<Bi", [SubType.SUBTYPE_INT, value]));
+                        formattedPayload.push(bufferpack_1.pack("<Bi", [SubType.SUBTYPE_INT, value])); // pack integer into a byte array and append it to the formatted payload
                     }
                     else if (isFloat(value)) {
-                        formattedPayload.push(bufferpack_1.pack("<Bf", [SubType.SUBTYPE_FLOAT, value]));
+                        formattedPayload.push(bufferpack_1.pack("<Bf", [SubType.SUBTYPE_FLOAT, value])); // pack float into a byte array and append it to the formatted payload
                     }
                     break;
-                case "string": // if string
-                    formattedPayload.push(bufferpack_1.pack(`<B${value.length + 1}s`, [SubType.SUBTYPE_STRING, (value + '\0')]));
+                case "string": // string
+                    formattedPayload.push(bufferpack_1.pack(`<B${value.length + 1}s`, [SubType.SUBTYPE_STRING, (value + '\0')])); // pack string into a byte array
                     break;
                 default:
                     //TODO: Implement Events
@@ -34243,7 +34253,7 @@ class SerialPacket {
             // @ts-ignore
             offset += item.length;
         });
-        return Array.from(finalPacket).concat(SlipChar.SLIP_END);
+        return Array.from(finalPacket).concat(SlipChar.SLIP_END); // condense into one non-typed array and append a SLIP_END character
     }
     /***
      * Calculates and returns the length total of the packet before any SLIP has been added.
@@ -34386,12 +34396,13 @@ const webusb_1 = require("dapjs/lib/transport/webusb");
 const Debug_1 = require("./Debug");
 const SerialHandler_1 = require("./SerialHandler");
 const login_1 = require("./api/login");
+const axios_1 = require("axios");
 const DEFAULT_BAUD = 115200;
 const DEFAULT_TRANSLATION_POLLING = 60000;
 const DEFAULT_STATUS = "Connect to a micro:bit and flash the bridging software";
 const statusText = $('#status');
 const connectButton = $('#connect');
-const flashButton = $('#flash');
+const testButton = $('#flash');
 const loginButton = $('#loginButton');
 const logoutButton = $('#logout');
 let targetDevice;
@@ -34408,8 +34419,8 @@ let hub_variables = {
         "port": 8001
     },
     "translations": {
-        "url": "https://raw.githubusercontent.com/Taylor-Woodcock/microbit-web-bridge/master/translations.json",
-        //"url": "/translations",
+        //"url": "https://raw.githubusercontent.com/Taylor-Woodcock/microbit-web-bridge/master/translations.json",
+        "url": "/translations",
         "poll_updates": false,
         "poll_time": DEFAULT_TRANSLATION_POLLING,
         "json": {}
@@ -34417,6 +34428,11 @@ let hub_variables = {
     "proxy": {
         "address": "/proxy",
         "proxy_requests": true
+    },
+    "dapjs": {
+        "serial_delay": 200,
+        "baud_rate": 115200,
+        "flash_timeout": 5000
     }
 };
 /***
@@ -34444,6 +34460,7 @@ function getTranslations() {
                 }
             }
         });
+        // poll the translations file for updates periodically
         setTimeout(getTranslations, hub_variables["translations"]["poll_time"]);
     });
 }
@@ -34457,7 +34474,7 @@ function selectDevice() {
         filters: [{ vendorId: 0xD28 }]
     })
         .then((device) => {
-        connect(device, DEFAULT_BAUD);
+        connect(device, hub_variables.dapjs.baud_rate);
     })
         .catch((error) => {
         setStatus(error);
@@ -34484,9 +34501,15 @@ function connect(device, baud) {
         return target.getSerialBaudrate();
     })
         .then(baud => {
-        target.startSerialRead(200);
+        target.startSerialRead(hub_variables.dapjs.serial_delay);
         console.log(`Listening at ${baud} baud...`);
         targetDevice = target;
+        // start a timeout check to see if hub authenticates or not for automatic flashing
+        setTimeout(() => {
+            if (!hub_variables.authenticated) {
+                flashDevice(targetDevice);
+            }
+        }, hub_variables.dapjs.flash_timeout);
     });
 }
 /***
@@ -34517,6 +34540,26 @@ function disconnect() {
     }
     targetDevice = null; // destroy DAPLink
 }
+function downloadHex() {
+    return axios_1.default.get(`http://localhost:3000/hex`, { responseType: 'arraybuffer' })
+        /*.then((success) => {
+            let data = success.data;
+            let hex = new Uint8Array(data).buffer;
+            console.log(hex);
+            targetDevice.flash(hex);
+        })*/
+        .catch((error) => {
+        console.log("ERROR" + error);
+    });
+}
+function flashDevice(targetDevice) {
+    console.log("Downloading hub hex file");
+    /*downloadHex().then((success) => {
+        console.log(success);
+        let program = new Uint8Array(success["data"]).buffer;
+        targetDevice.flash(program);
+    });*/
+}
 /***
  * Sets the status text displayed under the micro:bit to the msg parameter.
  *
@@ -34530,6 +34573,14 @@ function setStatus(msg) {
  * -------- E V E N T   H A N D L E R S --------
  *
  */
+/***
+ * Event handler for handling when a USB device is unplugged.
+ */
+navigator.usb.addEventListener('disconnect', (device) => {
+    // check if the bridging micro:bit is the one that was disconnected
+    if (device.device.serialNumber == serialNumber)
+        disconnect();
+});
 /***
  * Event handler for clicking the connect/disconnect button.
  *
@@ -34546,13 +34597,12 @@ connectButton.on('click', () => {
         disconnect();
     }
 });
-let test = 0;
 /***
  * Event handler for clicking the flash button.
  *
  * Upon pressing, this button will flash the micro:Bit with the hex file generated from the portal.
  */
-flashButton.on('click', () => {
+testButton.on('click', () => {
     console.log("Flashing currently not implemented");
     // TODO: Currently using this section for testing, this is where the flashing code will go
     // targetDevice.flash(hexFile);
@@ -34576,14 +34626,21 @@ flashButton.on('click', () => {
         .catch((error) => {
             console.log(error);
         });*/
+    /*    axios.get(`https://api.carbonintensity.org.uk/intensity/`)
+            .then((success) => {
+                console.log(success);
+            })
+            .catch((error) => {
+                console.log("ERROR" + error);
+            });*/
+    flashDevice(targetDevice);
 });
-/***
- * Event handler for handling when a USB device is unplugged.
+/**
+ * Logout button click handler
  */
-navigator.usb.addEventListener('disconnect', (device) => {
-    // check if the bridging micro:bit is the one that was disconnected
-    if (device.device.serialNumber == serialNumber)
-        disconnect();
+logoutButton.on('click', () => {
+    login_1.default.cleanTokens();
+    window.location.reload();
 });
 /**
  * Login button click handler
@@ -34600,10 +34657,6 @@ loginButton.on('click', () => {
         $('#loginError').text(error.message);
     });
 });
-logoutButton.on('click', () => {
-    login_1.default.cleanTokens();
-    window.location.reload();
-});
 /**
  * Show/hide main content based on token availability
  * TODO: use router library to handle it properly
@@ -34617,9 +34670,12 @@ window.onload = () => {
         $('#loginpage').show();
         $('#main').hide();
     }
+    // TODO: temporarily overwritten for localhost development
+    $('#loginpage').hide();
+    $('#main').show();
 };
 
-},{"./Debug":48,"./SerialHandler":50,"./api/login":54,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":42}],53:[function(require,module,exports){
+},{"./Debug":48,"./SerialHandler":50,"./api/login":54,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":42}],53:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -34660,13 +34716,13 @@ class AbstractApiService {
     }
     injectAxiosInterceptors(key) {
         const keys = Array.isArray(key) ? key : [key];
-        /* Interseptors callbacks */
+        /* Interceptors callbacks */
         const authInterceptorCallback = config => _.merge(config, {
             headers: {
                 authorization: `Bearer ${this.AccessToken}`,
             },
         });
-        /* Interseptors callbacks */
+        /* Interceptors callbacks */
         for (const interceptorKey of keys) {
             let interceptor = null;
             switch (interceptorKey) {
@@ -34759,6 +34815,7 @@ class AuthAPIService extends core_1.default {
                     username,
                     password
                 });
+                console.log(response);
                 localStorage.setItem(core_1.default.ACCESS_TOKEN_PARAM, response.data.access);
                 localStorage.setItem(core_1.default.REFRESH_TOKEN_PARAM, response.data.refresh);
             }
@@ -34767,7 +34824,7 @@ class AuthAPIService extends core_1.default {
             }
             if (![Config_1.RoleNames.TEACHER, Config_1.RoleNames.SLE_ADMIN].includes(this.RoleName)) {
                 this.cleanTokens();
-                throw new Error("You dont'n have permissions to view this page");
+                throw new Error("You don't have permissions to view this page");
             }
             return true;
         });

@@ -138,17 +138,17 @@ export class RequestHandler {
                 let headers = {
                     "school-id": this.hub_variables["credentials"]["school_id"],
                     "pi-id": this.hub_variables["credentials"]["pi_id"],
-                    "content-type": "application/json"
+                    'Content-Type': 'application/json',
                 };
 
                 //TODO: Temporary hardcoded parts for temporary functionality. This will be replaced with the translations
-                /*switch(queryStrMap["service"]) {
+                switch(queryStrMap["service"]) {
                     case "share":
                         console.log("SHARE");
 
                         if(queryStrMap["endpoint"] == "fetchData") {
-                            try{
-                                axios.get(`${this.hub_variables["proxy"]["address"]}/GET/?url=${newURL}${queryStrMap["unit"]}`, {headers: headers})
+                            try {
+                                axios.get(`${newURL}${queryStrMap["unit"]}`, {headers: headers})
                                     .then((success) => {
                                         responsePacket.append(`${JSON.parse(success.data.body)["value"]}`);
                                         responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
@@ -167,10 +167,10 @@ export class RequestHandler {
                                 let jsonData = {
                                     "key": serialPacket.get(2),
                                     "value": serialPacket.get(1),
-                                    "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL") //FIXME: For some reason this value is always 0 from the micro:bit
+                                    "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL")
                                 };
 
-                                axios.post(`${this.hub_variables["proxy"]["address"]}/POST/?url=${newURL}${serialPacket.get(2)}`, jsonData, {headers: headers})
+                                axios.post(`${newURL}${serialPacket.get(2)}`, jsonData, {headers: headers})
                                     .then((success) => {
                                         responsePacket.append("DATA SENT");
                                         responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
@@ -192,7 +192,7 @@ export class RequestHandler {
                                     "value": Number(serialPacket.get(1))
                                 };
 
-                                axios.post(`${this.hub_variables["proxy"]["address"]}/POST/?url=${newURL}`, jsonData, {headers: headers})
+                                axios.post(`${newURL}`, jsonData, {headers: headers})
                                     .then((success) => {
                                         responsePacket.append("DATA SENT");
                                         responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
@@ -219,7 +219,7 @@ export class RequestHandler {
 
                     default:
                         reject(`Unknown service ${queryStrMap["service"]}`);
-                }*/
+                }
             } catch(e) {
                 console.log(e);
                 reject("REST REQUEST ERROR");

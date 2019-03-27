@@ -8,6 +8,7 @@ const indexRouter = require('./routes/index');
 const proxyRouter = require('./routes/proxy');
 const translationsRouter = require('./routes/translations');
 const telemetryRouter = require('./routes/telemetry');
+const hexRouter = require('./routes/hex');
 
 var app = express();
 
@@ -25,6 +26,7 @@ app.use('/', indexRouter);
 app.use('/proxy', proxyRouter);
 app.use('/translations', translationsRouter);
 app.use('/telemetry', telemetryRouter);
+app.use('/hex', hexRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

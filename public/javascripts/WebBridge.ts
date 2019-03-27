@@ -4,6 +4,8 @@ import {WebUSB} from 'dapjs/lib/transport/webusb';
 import {debug, DebugType} from "./Debug";
 import {SerialHandler} from "./SerialHandler";
 import AuthAPIService from "./api/login";
+import axios from "axios";
+import {RequestStatus} from "./SerialPacket";
 
 const DEFAULT_BAUD = 115200;
 const DEFAULT_TRANSLATION_POLLING = 60000;
@@ -11,7 +13,7 @@ const DEFAULT_STATUS = "Connect to a micro:bit and flash the bridging software";
 
 const statusText = $('#status');
 const connectButton = $('#connect');
-const flashButton = $('#flash');
+const testButton = $('#flash');
 const loginButton = $('#loginButton');
 const logoutButton = $('#logout');
 
@@ -30,7 +32,8 @@ let hub_variables = {
         "port": 8001
     },
     "translations": {
-        "url": "https://raw.githubusercontent.com/Taylor-Woodcock/microbit-web-bridge/master/translations.json",
+        //"url": "https://raw.githubusercontent.com/Taylor-Woodcock/microbit-web-bridge/master/translations.json",
+        "url": "/translations",
         "poll_updates": false,
         "poll_time": DEFAULT_TRANSLATION_POLLING,
         "json": {}
@@ -38,6 +41,11 @@ let hub_variables = {
     "proxy": {
         "address": "/proxy", //"https://scc-tw.lancs.ac.uk/proxy",
         "proxy_requests": true
+    },
+    "dapjs": {
+        "serial_delay": 200,
+        "baud_rate": 115200,
+        "flash_timeout": 5000
     }
 };
 
@@ -67,6 +75,8 @@ async function getTranslations() {
             }
         }
     });
+
+    // poll the translations file for updates periodically
     setTimeout(getTranslations, hub_variables["translations"]["poll_time"]);
 }
 
@@ -82,7 +92,7 @@ function selectDevice() {
         filters: [{vendorId: 0xD28}]
     })
         .then((device) => {
-            connect(device, DEFAULT_BAUD);
+            connect(device, hub_variables.dapjs.baud_rate);
         })
         .catch((error) => {
             setStatus(error);
@@ -113,9 +123,16 @@ function connect(device, baud: number) {
             return target.getSerialBaudrate();
         })
         .then(baud => {
-            target.startSerialRead(200);
+            target.startSerialRead(hub_variables.dapjs.serial_delay);
             console.log(`Listening at ${baud} baud...`);
             targetDevice = target;
+
+            // start a timeout check to see if hub authenticates or not for automatic flashing
+            setTimeout(() => {
+                if(!hub_variables.authenticated) {
+                    flashDevice(targetDevice);
+                }
+            }, hub_variables.dapjs.flash_timeout)
         });
 }
 
@@ -152,6 +169,23 @@ function disconnect() {
     targetDevice = null; // destroy DAPLink
 }
 
+function downloadHex() {
+    return axios.get(`http://localhost:3000/hex`, {responseType: 'arraybuffer'})
+        .catch((error) => {
+            console.log("ERROR" + error);
+        });
+}
+
+function flashDevice(targetDevice: DAPLink) {
+    console.log("Downloading hub hex file");
+
+    downloadHex().then((success) => {
+        console.log(success);
+        let program = new Uint8Array(success["data"]).buffer;
+        //targetDevice.flash(program);
+    });
+}
+
 /***
  * Sets the status text displayed under the micro:bit to the msg parameter.
  *
@@ -166,6 +200,16 @@ function setStatus(msg: string) {
  * -------- E V E N T   H A N D L E R S --------
  *
  */
+
+
+/***
+ * Event handler for handling when a USB device is unplugged.
+ */
+navigator.usb.addEventListener('disconnect', (device) => {
+    // check if the bridging micro:bit is the one that was disconnected
+    if (device.device.serialNumber == serialNumber)
+        disconnect();
+});
 
 /***
  * Event handler for clicking the connect/disconnect button.
@@ -188,7 +232,7 @@ connectButton.on('click', () => {
  *
  * Upon pressing, this button will flash the micro:Bit with the hex file generated from the portal.
  */
-flashButton.on('click', () => {
+testButton.on('click', () => {
     console.log("Flashing currently not implemented");
 
     // TODO: Currently using this section for testing, this is where the flashing code will go
@@ -216,15 +260,23 @@ flashButton.on('click', () => {
         .catch((error) => {
             console.log(error);
         });*/
+
+/*    axios.get(`https://api.carbonintensity.org.uk/intensity/`)
+        .then((success) => {
+            console.log(success);
+        })
+        .catch((error) => {
+            console.log("ERROR" + error);
+        });*/
+    flashDevice(targetDevice);
 });
 
-/***
- * Event handler for handling when a USB device is unplugged.
+/**
+ * Logout button click handler
  */
-navigator.usb.addEventListener('disconnect', (device) => {
-    // check if the bridging micro:bit is the one that was disconnected
-    if (device.device.serialNumber == serialNumber)
-        disconnect();
+logoutButton.on('click', () => {
+    AuthAPIService.cleanTokens();
+    window.location.reload()
 });
 
 /**
@@ -243,11 +295,6 @@ loginButton.on('click', () => {
     });
 });
 
-logoutButton.on('click', () => {
-    AuthAPIService.cleanTokens();
-    window.location.reload()
-});
-
 /**
  * Show/hide main content based on token availability
  * TODO: use router library to handle it properly
@@ -260,4 +307,8 @@ window.onload = () => {
         $('#loginpage').show();
         $('#main').hide();
     }
+
+    // TODO: temporarily overwritten for localhost development
+    $('#loginpage').hide();
+    $('#main').show();
 };

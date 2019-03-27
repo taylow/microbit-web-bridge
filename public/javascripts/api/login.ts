@@ -9,6 +9,7 @@ class AuthAPIService extends AbstractApiService {
                 username,
                 password
             });
+            console.log(response);
             localStorage.setItem(AbstractApiService.ACCESS_TOKEN_PARAM, response.data.access);
             localStorage.setItem(AbstractApiService.REFRESH_TOKEN_PARAM, response.data.refresh);
         } catch (error) {

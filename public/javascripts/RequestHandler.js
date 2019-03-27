@@ -128,50 +128,52 @@ class RequestHandler {
                 let headers = {
                     "school-id": this.hub_variables["credentials"]["school_id"],
                     "pi-id": this.hub_variables["credentials"]["pi_id"],
-                    "content-type": "application/json"
+                    'Content-Type': 'application/json',
                 };
                 //TODO: Temporary hardcoded parts for temporary functionality. This will be replaced with the translations
-                /*switch(queryStrMap["service"]) {
+                switch (queryStrMap["service"]) {
                     case "share":
                         console.log("SHARE");
-
-                        if(queryStrMap["endpoint"] == "fetchData") {
-                            try{
-                                axios.get(`${this.hub_variables["proxy"]["address"]}/GET/?url=${newURL}${queryStrMap["unit"]}`, {headers: headers})
+                        if (queryStrMap["endpoint"] == "fetchData") {
+                            try {
+                                axios_1.default.get(`${newURL}${queryStrMap["unit"]}`, { headers: headers })
                                     .then((success) => {
-                                        responsePacket.append(`${JSON.parse(success.data.body)["value"]}`);
-                                        responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
-                                        resolve(responsePacket);
-                                    })
+                                    responsePacket.append(`${JSON.parse(success.data.body)["value"]}`);
+                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                    resolve(responsePacket);
+                                })
                                     .catch((error) => {
-                                        console.log("ERROR" + error);
-                                        reject("COULD NOT GET VARIABLE");
-                                        return;
-                                    });
-                            } catch(e) {
+                                    console.log("ERROR" + error);
+                                    reject("COULD NOT GET VARIABLE");
+                                    return;
+                                });
+                            }
+                            catch (e) {
                                 reject("COULD NOT GET VARIABLE");
                             }
-                        } else if(queryStrMap["endpoint"] == "shareData") {
+                        }
+                        else if (queryStrMap["endpoint"] == "shareData") {
                             try {
                                 let jsonData = {
                                     "key": serialPacket.get(2),
                                     "value": serialPacket.get(1),
-                                    "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL") //FIXME: For some reason this value is always 0 from the micro:bit
+                                    "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL")
                                 };
-
-                                axios.post(`${this.hub_variables["proxy"]["address"]}/POST/?url=${newURL}${serialPacket.get(2)}`, jsonData, {headers: headers})
+                                axios_1.default.post(`${newURL}${serialPacket.get(2)}`, jsonData, { headers: headers })
                                     .then((success) => {
-                                        responsePacket.append("DATA SENT");
-                                        responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
-                                        resolve(responsePacket);
-                                    })
+                                    responsePacket.append("DATA SENT");
+                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                    resolve(responsePacket);
+                                })
                                     .catch((error) => {
-                                        reject("COULD NOT SHARE DATA");
-                                    });
-                            } catch(e) {
+                                    reject("COULD NOT SHARE DATA");
+                                });
+                            }
+                            catch (e) {
                                 reject("COULD NOT SHARE DATA");
                             }
-                        } else if(queryStrMap["endpoint"] == "historicalData") {
+                        }
+                        else if (queryStrMap["endpoint"] == "historicalData") {
                             try {
                                 let jsonData = {
                                     "namespace": serialPacket.get(3),
@@ -180,22 +182,21 @@ class RequestHandler {
                                     "unit": serialPacket.get(4),
                                     "value": Number(serialPacket.get(1))
                                 };
-
-                                axios.post(`${this.hub_variables["proxy"]["address"]}/POST/?url=${newURL}`, jsonData, {headers: headers})
+                                axios_1.default.post(`${newURL}`, jsonData, { headers: headers })
                                     .then((success) => {
-                                        responsePacket.append("DATA SENT");
-                                        responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
-                                        resolve(responsePacket);
-                                    })
+                                    responsePacket.append("DATA SENT");
+                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                    resolve(responsePacket);
+                                })
                                     .catch((error) => {
-                                        reject("COULD NOT SHARE DATA");
-                                    });
-                            } catch(e) {
+                                    reject("COULD NOT SHARE DATA");
+                                });
+                            }
+                            catch (e) {
                                 reject("COULD NOT SHARE DATA");
                             }
                         }
                         break;
-
                     case "init":
                     case "iot":
                     case "energy":
@@ -205,10 +206,9 @@ class RequestHandler {
                     case "iss":
                         reject(`Unimplimented service`);
                         break;
-
                     default:
                         reject(`Unknown service ${queryStrMap["service"]}`);
-                }*/
+                }
             }
             catch (e) {
                 console.log(e);

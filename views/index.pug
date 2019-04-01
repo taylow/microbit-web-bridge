@@ -29,7 +29,7 @@ block content
         .container
             .row.justify-content-center
                 div(style="max-width:400px;padding-top:30px")
-                    img(src='../images/microbit.png').img-fluid
+                    img(src='../public/images/microbit.png').img-fluid
 
         div#status
             text Connect to a micro:bit and flash the bridging software
@@ -47,6 +47,9 @@ block content
             div#history-box
                 div#history-header History
 
+        div#hubSelectContainer
+            select#hubSelect.form-control
+                option(selected=true value="-1") Select webhub to flash...
 
 
         dif#footer

@@ -14,18 +14,22 @@ const webusb_1 = require("dapjs/lib/transport/webusb");
 const Debug_1 = require("./Debug");
 const SerialHandler_1 = require("./SerialHandler");
 const login_1 = require("./api/login");
+const hubs_1 = require("./api/hubs");
 const axios_1 = require("axios");
 const DEFAULT_BAUD = 115200;
+const FLASH_PAGE_SIZE = 59;
 const DEFAULT_TRANSLATION_POLLING = 60000;
 const DEFAULT_STATUS = "Connect to a micro:bit and flash the bridging software";
 const statusText = $('#status');
 const connectButton = $('#connect');
-const testButton = $('#flash');
+const flashButton = $('#flash');
 const loginButton = $('#loginButton');
 const logoutButton = $('#logout');
+const hubsSelect = $('#hubSelect');
 let targetDevice;
 let serialNumber;
 let serialHandler;
+let selectedHubUID = "-1";
 let hub_variables = {
     "authenticated": false,
     "credentials": {
@@ -122,13 +126,7 @@ function connect(device, baud) {
         target.startSerialRead(hub_variables.dapjs.serial_delay);
         console.log(`Listening at ${baud} baud...`);
         targetDevice = target;
-        // start a timeout check to see if hub authenticates or not for automatic flashing
-        setTimeout(() => {
-            if (!hub_variables.authenticated) {
-                flashDevice(targetDevice);
-            }
-        }, hub_variables.dapjs.flash_timeout);
-    });
+    }).catch(e => console.log(e));
 }
 /***
  * Disconnects the micro:bit, and resets the front end and hub variables.
@@ -150,10 +148,12 @@ function disconnect() {
         targetDevice.stopSerialRead();
         targetDevice.disconnect()
             .catch((e) => {
+            console.log(e);
             console.log(ERROR_MESSAGE);
         });
     }
     catch (e) {
+        console.log(e);
         console.log(ERROR_MESSAGE);
     }
     targetDevice = null; // destroy DAPLink
@@ -214,8 +214,28 @@ connectButton.on('click', () => {
  *
  * Upon pressing, this button will flash the micro:Bit with the hex file generated from the portal.
  */
-testButton.on('click', () => {
-    console.log("Flashing currently not implemented");
+flashButton.on('click', () => {
+    if (selectedHubUID === '-1') {
+        alert("Hub firmware should be selected!");
+        return;
+    }
+    if (!targetDevice) {
+        alert("Microbit is not connected!");
+        return;
+    }
+    hub_variables["authenticated"] = false;
+    hub_variables["school_id"] = "";
+    hub_variables["pi_id"] = "";
+    hubs_1.default.getHubFirmware(selectedHubUID).then((firmware) => {
+        targetDevice.flash(firmware, FLASH_PAGE_SIZE).then((result) => {
+            targetDevice.reconnect();
+            alert("Flashed successfully! You need to reconnect device before using");
+            disconnect();
+        }).catch((error) => {
+            console.log(error);
+            alert("Flashing error");
+        });
+    });
     // TODO: Currently using this section for testing, this is where the flashing code will go
     // targetDevice.flash(hexFile);
     /*let serialPacket = new SerialPacket(1, 139, 207, 2);
@@ -245,7 +265,6 @@ testButton.on('click', () => {
             .catch((error) => {
                 console.log("ERROR" + error);
             });*/
-    flashDevice(targetDevice);
 });
 /**
  * Logout button click handler
@@ -269,6 +288,9 @@ loginButton.on('click', () => {
         $('#loginError').text(error.message);
     });
 });
+hubsSelect.on('change', function () {
+    selectedHubUID = this.value;
+});
 /**
  * Show/hide main content based on token availability
  * TODO: use router library to handle it properly
@@ -277,6 +299,11 @@ window.onload = () => {
     if (login_1.default.AccessToken) {
         $('#loginpage').hide();
         $('#main').show();
+        hubs_1.default.getWebHubs().then((hubs) => {
+            for (const hub of hubs) {
+                hubsSelect.append(`<option value='${hub.uid}'>${hub.name}</option>`);
+            }
+        });
     }
     else {
         $('#loginpage').show();

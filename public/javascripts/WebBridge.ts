@@ -4,22 +4,25 @@ import {WebUSB} from 'dapjs/lib/transport/webusb';
 import {debug, DebugType} from "./Debug";
 import {SerialHandler} from "./SerialHandler";
 import AuthAPIService from "./api/login";
+import HubsAPIService from "./api/hubs";
 import axios from "axios";
-import {RequestStatus} from "./SerialPacket";
 
 const DEFAULT_BAUD = 115200;
+const FLASH_PAGE_SIZE = 59;
 const DEFAULT_TRANSLATION_POLLING = 60000;
 const DEFAULT_STATUS = "Connect to a micro:bit and flash the bridging software";
 
 const statusText = $('#status');
 const connectButton = $('#connect');
-const testButton = $('#flash');
+const flashButton = $('#flash');
 const loginButton = $('#loginButton');
 const logoutButton = $('#logout');
+const hubsSelect = $('#hubSelect');
 
 let targetDevice: DAPLink;
 let serialNumber: string;
 let serialHandler: SerialHandler;
+let selectedHubUID: string = "-1";
 
 let hub_variables = {
     "authenticated": false,
@@ -126,14 +129,7 @@ function connect(device, baud: number) {
             target.startSerialRead(hub_variables.dapjs.serial_delay);
             console.log(`Listening at ${baud} baud...`);
             targetDevice = target;
-
-            // start a timeout check to see if hub authenticates or not for automatic flashing
-            setTimeout(() => {
-                if(!hub_variables.authenticated) {
-                    flashDevice(targetDevice);
-                }
-            }, hub_variables.dapjs.flash_timeout)
-        });
+        }).catch(e => console.log(e));
 }
 
 /***
@@ -160,9 +156,11 @@ function disconnect() {
         targetDevice.stopSerialRead();
         targetDevice.disconnect()
             .catch((e) => {
+                console.log(e);
                 console.log(ERROR_MESSAGE);
             });
     } catch (e) {
+        console.log(e);
         console.log(ERROR_MESSAGE);
     }
 
@@ -232,8 +230,30 @@ connectButton.on('click', () => {
  *
  * Upon pressing, this button will flash the micro:Bit with the hex file generated from the portal.
  */
-testButton.on('click', () => {
-    console.log("Flashing currently not implemented");
+flashButton.on('click', () => {
+    if (selectedHubUID === '-1') {
+        alert("Hub firmware should be selected!");
+        return
+    }
+    if (!targetDevice) {
+        alert("Microbit is not connected!");
+        return
+    }
+
+    hub_variables["authenticated"] = false;
+    hub_variables["school_id"] = "";
+    hub_variables["pi_id"] = "";
+
+    HubsAPIService.getHubFirmware(selectedHubUID).then((firmware: ArrayBuffer) => {
+        targetDevice.flash(firmware, FLASH_PAGE_SIZE).then((result) => {
+            targetDevice.reconnect();
+            alert("Flashed successfully! You need to reconnect device before using")
+            disconnect()
+        }).catch((error) => {
+            console.log(error);
+            alert("Flashing error")
+        })
+    });
 
     // TODO: Currently using this section for testing, this is where the flashing code will go
     // targetDevice.flash(hexFile);
@@ -261,14 +281,13 @@ testButton.on('click', () => {
             console.log(error);
         });*/
 
-/*    axios.get(`https://api.carbonintensity.org.uk/intensity/`)
-        .then((success) => {
-            console.log(success);
-        })
-        .catch((error) => {
-            console.log("ERROR" + error);
-        });*/
-    flashDevice(targetDevice);
+    /*    axios.get(`https://api.carbonintensity.org.uk/intensity/`)
+            .then((success) => {
+                console.log(success);
+            })
+            .catch((error) => {
+                console.log("ERROR" + error);
+            });*/
 });
 
 /**
@@ -295,6 +314,10 @@ loginButton.on('click', () => {
     });
 });
 
+hubsSelect.on('change', function () {
+    selectedHubUID = this.value;
+});
+
 /**
  * Show/hide main content based on token availability
  * TODO: use router library to handle it properly
@@ -303,6 +326,11 @@ window.onload = () => {
     if (AuthAPIService.AccessToken) {
         $('#loginpage').hide();
         $('#main').show();
+        HubsAPIService.getWebHubs().then((hubs) => {
+            for (const hub of hubs) {
+                hubsSelect.append(`<option value='${hub.uid}'>${hub.name}</option>`);
+            }
+        })
     } else {
         $('#loginpage').show();
         $('#main').hide();

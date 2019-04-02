@@ -35074,7 +35074,11 @@ function debug(message, type) {
 }
 exports.debug = debug;
 
+<<<<<<< HEAD
 },{"./constants/Config":59,"jquery":43}],53:[function(require,module,exports){
+=======
+},{"./constants/Config":58,"jquery":42}],51:[function(require,module,exports){
+>>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36063,18 +36067,22 @@ const webusb_1 = require("dapjs/lib/transport/webusb");
 const Debug_1 = require("./Debug");
 const SerialHandler_1 = require("./SerialHandler");
 const login_1 = require("./api/login");
+const hubs_1 = require("./api/hubs");
 const axios_1 = require("axios");
 const DEFAULT_BAUD = 115200;
+const FLASH_PAGE_SIZE = 59;
 const DEFAULT_TRANSLATION_POLLING = 60000;
 const DEFAULT_STATUS = "Connect to a micro:bit to start the hub";
 const statusText = $('#status');
 const connectButton = $('#connect');
-const testButton = $('#flash');
+const flashButton = $('#flash');
 const loginButton = $('#loginButton');
 const logoutButton = $('#logout');
+const hubsSelect = $('#hubSelect');
 let targetDevice;
 let serialNumber;
 let serialHandler;
+let selectedHubUID = "-1";
 let hub_variables = {
     "authenticated": false,
     "credentials": {
@@ -36180,6 +36188,7 @@ function connect(device, baud) {
         target.startSerialRead(hub_variables.dapjs.serial_delay);
         console.log(`Listening at ${baud} baud...`);
         targetDevice = target;
+<<<<<<< HEAD
         targetDevice.reset();
         // start a timeout check to see if hub authenticates or not for automatic flashing
         setTimeout(() => {
@@ -36188,6 +36197,9 @@ function connect(device, baud) {
             }
         }, hub_variables.dapjs.flash_timeout);
     });
+=======
+    }).catch(e => console.log(e));
+>>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
 }
 /***
  * Disconnects the micro:bit, and resets the front end and hub variables.
@@ -36209,10 +36221,12 @@ function disconnect() {
         targetDevice.stopSerialRead();
         targetDevice.disconnect()
             .catch((e) => {
+            console.log(e);
             console.log(ERROR_MESSAGE);
         });
     }
     catch (e) {
+        console.log(e);
         console.log(ERROR_MESSAGE);
     }
     targetDevice = null; // destroy DAPLink
@@ -36286,10 +36300,61 @@ connectButton.on('click', () => {
  *
  * Upon pressing, this button will flash the micro:Bit with the hex file generated from the portal.
  */
-testButton.on('click', () => {
-    console.log("Flashing currently not implemented");
+flashButton.on('click', () => {
+    if (selectedHubUID === '-1') {
+        alert("Hub firmware should be selected!");
+        return;
+    }
+    if (!targetDevice) {
+        alert("Microbit is not connected!");
+        return;
+    }
+    hub_variables["authenticated"] = false;
+    hub_variables["school_id"] = "";
+    hub_variables["pi_id"] = "";
+    hubs_1.default.getHubFirmware(selectedHubUID).then((firmware) => {
+        targetDevice.flash(firmware, FLASH_PAGE_SIZE).then((result) => {
+            targetDevice.reconnect();
+            alert("Flashed successfully! You need to reconnect device before using");
+            disconnect();
+        }).catch((error) => {
+            console.log(error);
+            alert("Flashing error");
+        });
+    });
     // TODO: Currently using this section for testing, this is where the flashing code will go
+<<<<<<< HEAD
     //flashDevice(targetDevice);
+=======
+    // targetDevice.flash(hexFile);
+    /*let serialPacket = new SerialPacket(1, 139, 207, 2);
+    let responsePacket = new SerialPacket(1, 139, 207, 2);
+    serialPacket.append("/share/historicalData/");
+    serialPacket.append("30");
+    serialPacket.append("temp");
+    serialPacket.append("D22");
+    serialPacket.append("c");
+
+    console.log(serialPacket.getFormattedPacket());
+    console.log(serialPacket.getFormattedPayloadParts().length);*/
+    /*console.log(processRESTRequest(serialPacket, responsePacket, hub_variables["translations"]["json"]["share"], "POST"));*/
+    /*RequestHandler.processGETRequest("https://api.carbonintensity.org.uk/generation/")
+        .then((response) => {
+            console.log(response);
+            console.log(response.data);
+            console.log(jspath.apply('.data.generationmix.{.fuel == "coal"}.perclel', response.data));
+        })
+        .catch((error) => {
+            console.log(error);
+        });*/
+    /*    axios.get(`https://api.carbonintensity.org.uk/intensity/`)
+            .then((success) => {
+                console.log(success);
+            })
+            .catch((error) => {
+                console.log("ERROR" + error);
+            });*/
+>>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
 });
 /**
  * Logout button click handler
@@ -36313,6 +36378,9 @@ loginButton.on('click', () => {
         $('#loginError').text(error.message);
     });
 });
+hubsSelect.on('change', function () {
+    selectedHubUID = this.value;
+});
 /**
  * Show/hide main content based on token availability
  * TODO: use router library to handle it properly
@@ -36321,6 +36389,11 @@ window.onload = () => {
     if (login_1.default.AccessToken) {
         $('#loginpage').hide();
         $('#main').show();
+        hubs_1.default.getWebHubs().then((hubs) => {
+            for (const hub of hubs) {
+                hubsSelect.append(`<option value='${hub.uid}'>${hub.name}</option>`);
+            }
+        });
     }
     else {
         $('#loginpage').show();
@@ -36331,7 +36404,11 @@ window.onload = () => {
     //$('#main').show();
 };
 
+<<<<<<< HEAD
 },{"./Debug":52,"./SerialHandler":54,"./api/login":58,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":43}],57:[function(require,module,exports){
+=======
+},{"./Debug":50,"./SerialHandler":52,"./api/hubs":56,"./api/login":57,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":42}],55:[function(require,module,exports){
+>>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36449,7 +36526,53 @@ AbstractApiService.UNAUTHORIZED_CODE = 401; // Default unauthorized code
 AbstractApiService.FETCH_ACCESS_TOKEN_ENDPOINT = '/token/refresh/';
 exports.default = AbstractApiService;
 
+<<<<<<< HEAD
 },{"../constants/Config":59,"axios":2,"jwt-decode":48,"lodash":49}],58:[function(require,module,exports){
+=======
+},{"../constants/Config":58,"axios":2,"jwt-decode":47,"lodash":48}],56:[function(require,module,exports){
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const axios_1 = require("axios");
+const core_1 = require("./core");
+class HubsAPIService extends core_1.default {
+    getWebHubs() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const response = yield axios_1.default.get('/hubs/');
+                return response.data.filter((hub) => hub.type === "browser");
+            }
+            catch (error) {
+                throw new Error(JSON.stringify(error.response.data));
+            }
+        });
+    }
+    getHubFirmware(hubUid) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const response = yield axios_1.default.get('/hubs/microbit-firmware/', {
+                    params: { uid: hubUid },
+                    responseType: 'arraybuffer',
+                });
+                return response.data;
+            }
+            catch (error) {
+                throw new Error(JSON.stringify(error.response.data));
+            }
+        });
+    }
+}
+exports.default = new HubsAPIService();
+
+},{"./core":55,"axios":2}],57:[function(require,module,exports){
+>>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36488,7 +36611,11 @@ class AuthAPIService extends core_1.default {
 }
 exports.default = new AuthAPIService();
 
+<<<<<<< HEAD
 },{"../constants/Config":59,"./core":57,"axios":2}],59:[function(require,module,exports){
+=======
+},{"../constants/Config":58,"./core":55,"axios":2}],58:[function(require,module,exports){
+>>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // TODO for local development. Request to stage/prod are restricted by CORS

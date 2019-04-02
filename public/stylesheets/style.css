@@ -329,3 +329,9 @@ h1 {
     margin-bottom: 10px;
     padding-left: 24px;
 }
+
+#hubSelectContainer {
+    padding-top: 20px;
+    width: 50%;
+    margin: auto;
+}

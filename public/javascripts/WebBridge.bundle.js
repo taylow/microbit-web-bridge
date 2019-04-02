@@ -236,7 +236,7 @@ module.exports = function xhrAdapter(config) {
 };
 
 }).call(this,require('_process'))
-},{"../core/createError":10,"./../core/settle":13,"./../helpers/btoa":17,"./../helpers/buildURL":18,"./../helpers/cookies":20,"./../helpers/isURLSameOrigin":22,"./../helpers/parseHeaders":24,"./../utils":26,"_process":49}],4:[function(require,module,exports){
+},{"../core/createError":10,"./../core/settle":13,"./../helpers/btoa":17,"./../helpers/buildURL":18,"./../helpers/cookies":20,"./../helpers/isURLSameOrigin":22,"./../helpers/parseHeaders":24,"./../utils":26,"_process":50}],4:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -793,7 +793,7 @@ utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
 module.exports = defaults;
 
 }).call(this,require('_process'))
-},{"./adapters/http":3,"./adapters/xhr":3,"./helpers/normalizeHeaderName":23,"./utils":26,"_process":49}],16:[function(require,module,exports){
+},{"./adapters/http":3,"./adapters/xhr":3,"./helpers/normalizeHeaderName":23,"./utils":26,"_process":50}],16:[function(require,module,exports){
 'use strict';
 
 module.exports = function bind(fn, thisArg) {
@@ -1472,7 +1472,7 @@ module.exports = {
   trim: trim
 };
 
-},{"./helpers/bind":16,"is-buffer":41}],27:[function(require,module,exports){
+},{"./helpers/bind":16,"is-buffer":42}],27:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -3404,7 +3404,7 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":27,"ieee754":40}],29:[function(require,module,exports){
+},{"base64-js":27,"ieee754":41}],29:[function(require,module,exports){
 (function (Buffer){
 /*!
  *  Copyright 2008 Fair Oaks Labs, Inc.
@@ -5000,7 +5000,7 @@ exports.CmsisDAP = CmsisDAP;
 
 
 
-},{"events":39}],37:[function(require,module,exports){
+},{"events":40}],37:[function(require,module,exports){
 "use strict";
 /*
 * DAPjs
@@ -5175,6 +5175,44 @@ exports.WebUSB = WebUSB;
 
 
 },{}],39:[function(require,module,exports){
+'use strict';
+const timeZone = require('time-zone');
+
+const dateTime = options => {
+	options = Object.assign({
+		date: new Date(),
+		local: true,
+		showTimeZone: false,
+		showMilliseconds: false
+	}, options);
+
+	let {date} = options;
+
+	if (options.local) {
+		// Offset the date so it will return the correct value when getting the ISO string
+		date = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+	}
+
+	let end = '';
+
+	if (options.showTimeZone) {
+		end = ' UTC' + (options.local ? timeZone(date) : '');
+	}
+
+	if (options.showMilliseconds && date.getUTCMilliseconds() > 0) {
+		end = ` ${date.getUTCMilliseconds()}ms${end}`;
+	}
+
+	return date
+		.toISOString()
+		.replace(/T/, ' ')
+		.replace(/\..+/, end);
+};
+
+module.exports = dateTime;
+module.exports.default = dateTime;
+
+},{"time-zone":51}],40:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5699,7 +5737,7 @@ function functionBindPolyfill(context) {
   };
 }
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -5785,7 +5823,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 /*!
  * Determine if an object is a Buffer
  *
@@ -5808,7 +5846,7 @@ function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
 }
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v3.3.1
  * https://jquery.com/
@@ -16174,9 +16212,9 @@ if ( !noGlobal ) {
 return jQuery;
 } );
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 module.exports = require('./lib/jspath');
-},{"./lib/jspath":44}],44:[function(require,module,exports){
+},{"./lib/jspath":45}],45:[function(require,module,exports){
 'use strict';
 /**
 * JSPath
@@ -17592,7 +17630,7 @@ else {
 
 })();
 
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 /**
  * The code was extracted from:
  * https://github.com/davidchambers/Base64.js
@@ -17632,7 +17670,7 @@ function polyfill (input) {
 
 module.exports = typeof window !== 'undefined' && window.atob && window.atob.bind(window) || polyfill;
 
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 var atob = require('./atob');
 
 function b64DecodeUnicode(str) {
@@ -17667,7 +17705,7 @@ module.exports = function(str) {
   }
 };
 
-},{"./atob":45}],47:[function(require,module,exports){
+},{"./atob":46}],48:[function(require,module,exports){
 'use strict';
 
 var base64_url_decode = require('./base64_url_decode');
@@ -17695,7 +17733,7 @@ module.exports = function (token,options) {
 
 module.exports.InvalidTokenError = InvalidTokenError;
 
-},{"./base64_url_decode":46}],48:[function(require,module,exports){
+},{"./base64_url_decode":47}],49:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -34806,7 +34844,7 @@ module.exports.InvalidTokenError = InvalidTokenError;
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -34992,7 +35030,19 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
+'use strict';
+module.exports = date => {
+	const offset = (date || new Date()).getTimezoneOffset();
+	const absOffset = Math.abs(offset);
+	const hours = Math.floor(absOffset / 60);
+	const minutes = absOffset % 60;
+	const minutesOut = minutes > 0 ? ':' + ('0' + minutes).slice(-2) : '';
+
+	return (offset < 0 ? '+' : '-') + hours + minutesOut;
+};
+
+},{}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const $ = require("jquery");
@@ -35024,7 +35074,7 @@ function debug(message, type) {
 }
 exports.debug = debug;
 
-},{"./constants/Config":57,"jquery":42}],51:[function(require,module,exports){
+},{"./constants/Config":59,"jquery":43}],53:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35039,6 +35089,7 @@ const jspath = require("jspath");
 const SerialPacket_1 = require("./SerialPacket");
 const Debug_1 = require("./Debug");
 const axios_1 = require("axios");
+const date_time_1 = require("date-time");
 class RequestHandler {
     constructor(hub_variables) {
         this.translations = hub_variables["translations"]["json"]; // grab the translations part for easier access
@@ -35118,13 +35169,13 @@ class RequestHandler {
                 // console.log(mbQueryString);
                 // maps the query string coming from the micro:bit to the translated format
                 let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
-                // console.log(queryStrMap);
+                console.log(queryStrMap);
                 // gets the baseURL for the specified service
                 let baseURL = translation[requestType]["baseURL"];
-                // console.log(baseURL);
+                console.log(baseURL);
                 // gets the endpoint json
                 let endpoint = translation[requestType]["endpoint"][queryStrMap["endpoint"]];
-                // console.log(endpoint);
+                console.log(endpoint);
                 // gets the queryObject for the specified endpoint
                 let queryObject = endpoint["queryObject"];
                 // if there was no query object, set it to blank
@@ -35153,204 +35204,294 @@ class RequestHandler {
                     }
                 }
                 Debug_1.debug(`Service: ${queryStrMap["service"].toUpperCase()}`, Debug_1.DebugType.DEBUG);
-                let headers = {
-                    "school-id": this.hub_variables["credentials"]["school_id"],
-                    "pi-id": this.hub_variables["credentials"]["pi_id"],
-                    'Content-Type': 'application/json',
-                };
-                //TODO: Temporary hardcoded parts for temporary functionality. This will be replaced with the translations
-                switch (queryStrMap["service"]) {
-                    case "share":
-                        if (queryStrMap["endpoint"] == "fetchData") {
-                            try {
-                                axios_1.default.get(`${newURL}${queryStrMap["unit"]}`, { headers: headers })
-                                    .then((success) => {
-                                    console.log(success);
-                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                                    responsePacket.append(data);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    console.log("ERROR" + error);
-                                    reject("COULD NOT GET VARIABLE");
-                                    return;
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT GET VARIABLE");
-                            }
-                        }
-                        else if (queryStrMap["endpoint"] == "shareData") {
-                            try {
-                                let jsonData = {
-                                    "key": serialPacket.get(2),
-                                    "value": serialPacket.get(1),
-                                    "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL")
-                                };
-                                axios_1.default.post(`${newURL}${serialPacket.get(2)}`, jsonData, { headers: headers })
-                                    .then((success) => {
-                                    responsePacket.append("DATA SENT");
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    reject("COULD NOT SHARE DATA");
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT SHARE DATA");
-                            }
-                        }
-                        else if (queryStrMap["endpoint"] == "historicalData") {
-                            try {
-                                let jsonData = {
-                                    "namespace": serialPacket.get(3),
-                                    "name": serialPacket.get(2),
-                                    "type": 0,
-                                    "unit": serialPacket.get(4),
-                                    "value": Number(serialPacket.get(1))
-                                };
-                                axios_1.default.post(`${newURL}`, jsonData, { headers: headers })
-                                    .then((success) => {
-                                    responsePacket.append("DATA SENT");
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    reject("COULD NOT SHARE DATA");
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT SHARE DATA");
-                            }
-                        }
-                        break;
-                    case "iot":
-                        let jsonData = {
-                            "value": null
-                        };
-                        if (requestType == "POST") {
-                            try {
-                                newURL = newURL.replace("^device^", serialPacket.get(1));
-                                if (queryStrMap["endpoint"] == "bulbState" || queryStrMap["endpoint"] == "switchState")
-                                    jsonData.value = serialPacket.get(2) == 0 ? "off" : "on";
-                                else
-                                    jsonData.value = String(serialPacket.get(2));
-                                axios_1.default.post(`${newURL}`, jsonData, { headers: headers })
-                                    .then((success) => {
-                                    responsePacket.append(jsonData.value);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    console.log(error.response);
-                                    if (error.response.status == 404) {
-                                        reject("DEVICE NOT FOUND");
-                                    }
-                                    else {
-                                        reject("COULD NOT REACH DEVICE");
-                                    }
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT REACH DEVICE");
-                            }
-                        }
-                        else if (requestType == "GET") {
-                            try {
-                                newURL = newURL.replace("^device^", queryStrMap["device"]);
-                                console.log(newURL);
-                                console.log(queryStrMap);
-                                axios_1.default.get(`${newURL}`, { headers: headers })
-                                    .then((success) => {
-                                    console.log(success);
-                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                                    responsePacket.append(data);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    console.log("ERROR" + error);
-                                    reject("COULD NOT GET VARIABLE");
-                                    return;
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT REACH DEVICE");
-                            }
-                        }
-                        break;
-                    //case "energy":
-                    //case "energyMeter":
-                    //case "weather":
-                    case "carbon":
-                        if (queryStrMap["endpoint"] == "index") {
-                            try {
-                                axios_1.default.get(`${newURL}`)
-                                    .then((success) => {
-                                    console.log(success);
-                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                                    responsePacket.append(data);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    reject("COULD NOT GET DATA");
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT GET DATA");
-                            }
-                        }
-                        else if (queryStrMap["endpoint"] == "value") {
-                            try {
-                                axios_1.default.get(`${newURL}`)
-                                    .then((success) => {
-                                    console.log(success);
-                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                                    responsePacket.append(data);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    reject("COULD NOT GET DATA");
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT GET DATA");
-                            }
-                        }
-                        else if (queryStrMap["endpoint"] == "genmix") {
-                            try {
-                                axios_1.default.get(`${newURL}`)
-                                    .then((success) => {
-                                    console.log(success);
-                                    let data = String(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
-                                    console.log(data);
-                                    responsePacket.append(data);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    reject("COULD NOT GET DATA");
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT GET DATA");
-                            }
-                        }
-                        break;
-                    default:
-                        reject(`UNKNOWN SERVICE ${queryStrMap["service"]}`);
-                }
+                return this.temporaryTranslation(queryStrMap, newURL, endpoint, responsePacket, serialPacket, requestType);
             }
             catch (e) {
                 console.log(e);
                 reject("REST REQUEST ERROR");
             }
-            // responsePacket.request_type |= RequestStatus.REQUEST_STATUS_OK;
-            // resolve(responsePacket);
+        });
+    }
+    /***
+     * TODO: Temporary hardcoded parts for temporary functionality. Very messy, mostly copied from the Python hub. This will be replaced with the translations.
+     *
+     * @param queryStrMap
+     * @param url
+     * @param endpoint
+     * @param responsePacket
+     * @param serialPacket
+     * @param requestType
+     */
+    temporaryTranslation(queryStrMap, url, endpoint, responsePacket, serialPacket, requestType) {
+        return new Promise((resolve, reject) => {
+            let headers = {
+                "school-id": this.hub_variables["credentials"]["school_id"],
+                "pi-id": this.hub_variables["credentials"]["pi_id"],
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            };
+            switch (queryStrMap["service"]) {
+                case "share":
+                    if (queryStrMap["endpoint"] == "fetchData") {
+                        try {
+                            axios_1.default.get(`${url}${queryStrMap["unit"]}`, { headers: headers })
+                                .then((success) => {
+                                console.log(success);
+                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
+                                responsePacket.append(data);
+                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                console.log("ERROR" + error);
+                                reject("COULD NOT GET VARIABLE");
+                                return;
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT GET VARIABLE");
+                        }
+                    }
+                    else if (queryStrMap["endpoint"] == "shareData") {
+                        try {
+                            let jsonData = {
+                                "key": serialPacket.get(2),
+                                "value": serialPacket.get(1),
+                                "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL")
+                            };
+                            axios_1.default.post(`${url}${serialPacket.get(2)}`, jsonData, { headers: headers })
+                                .then((success) => {
+                                responsePacket.append("DATA SENT");
+                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                reject("COULD NOT SHARE DATA");
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT SHARE DATA");
+                        }
+                    }
+                    else if (queryStrMap["endpoint"] == "historicalData") {
+                        try {
+                            let jsonData = {
+                                "namespace": serialPacket.get(3),
+                                "name": serialPacket.get(2),
+                                "type": 0,
+                                "unit": serialPacket.get(4),
+                                "value": Number(serialPacket.get(1))
+                            };
+                            axios_1.default.post(`${url}`, jsonData, { headers: headers })
+                                .then((success) => {
+                                responsePacket.append("DATA SENT");
+                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                reject("COULD NOT SHARE DATA");
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT SHARE DATA");
+                        }
+                    }
+                    break;
+                case "iot":
+                    let jsonData = {
+                        "value": null
+                    };
+                    if (requestType == "POST") {
+                        try {
+                            url = url.replace("^device^", serialPacket.get(1));
+                            if (queryStrMap["endpoint"] == "bulbState" || queryStrMap["endpoint"] == "switchState")
+                                jsonData.value = serialPacket.get(2) == 0 ? "off" : "on";
+                            else
+                                jsonData.value = String(serialPacket.get(2));
+                            axios_1.default.post(`${url}`, jsonData, { headers: headers })
+                                .then((success) => {
+                                responsePacket.append(jsonData.value);
+                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                console.log(error.response);
+                                if (error.response.status == 404) {
+                                    reject("DEVICE NOT FOUND");
+                                }
+                                else {
+                                    reject("COULD NOT REACH DEVICE");
+                                }
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT REACH DEVICE");
+                        }
+                    }
+                    else if (requestType == "GET") {
+                        try {
+                            url = url.replace("^device^", queryStrMap["device"]);
+                            console.log(url);
+                            console.log(queryStrMap);
+                            axios_1.default.get(`${url}`, { headers: headers })
+                                .then((success) => {
+                                console.log(success);
+                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
+                                responsePacket.append(data);
+                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                console.log("ERROR" + error);
+                                reject("COULD NOT GET VARIABLE");
+                                return;
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT REACH DEVICE");
+                        }
+                    }
+                    break;
+                case "energy":
+                    try {
+                        let fromDate = new Date();
+                        let toDate = new Date();
+                        if (queryStrMap["endpoint"] == "energyLevel") {
+                            if (queryStrMap["unit"] == 0)
+                                url += "energy_type=ELECTRICITY";
+                            else if (queryStrMap["unit"] == 1)
+                                url += "energy_type=GAS";
+                            else if (queryStrMap["unit"] == 2)
+                                url += "energy_type=SOLAR";
+                        }
+                        if (queryStrMap["location"] == "local")
+                            url += "&location_uid=" + this.hub_variables["credentials"]["school_id"];
+                        else
+                            url += "&location_uid=" + queryStrMap["location"];
+                        if (queryStrMap["type"] == "historical") {
+                            switch (queryStrMap["period"]) {
+                                case "hour":
+                                    fromDate.setHours(fromDate.getHours() - queryStrMap["amount"]);
+                                    break;
+                                case "day":
+                                    fromDate.setDate(fromDate.getDate() - queryStrMap["amount"]);
+                                    break;
+                                case "week":
+                                    fromDate.setDate(fromDate.getDate() - (queryStrMap["amount"] * 7));
+                                    break;
+                                case "month":
+                                    fromDate.setMonth(fromDate.getMonth() - queryStrMap["amount"]);
+                                    break;
+                            }
+                            url += `&from=${date_time_1.default({ date: fromDate })}&to=${date_time_1.default({ date: toDate })}`;
+                        }
+                        console.log(encodeURI(url));
+                        axios_1.default.get(`${encodeURI(url)}`, { headers: headers })
+                            .then((success) => {
+                            console.log(success);
+                            let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
+                            console.log("DATA: " + data);
+                            responsePacket.append(data);
+                            responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                            resolve(responsePacket);
+                        })
+                            .catch((error) => {
+                            console.log("ERROR" + error);
+                            reject("COULD NOT GET ENERGY USAGE");
+                            return;
+                        });
+                    }
+                    catch (e) {
+                        console.log(e);
+                        reject("COULD NOT GET ENERGY USAGE");
+                    }
+                    break;
+                case "energyMeter":
+                    try {
+                        let jsonData = {
+                            "namespace": endpoint["queryObject"]["namespace"],
+                            "name": serialPacket.get(1),
+                            "type": serialPacket.get(3),
+                            "unit": endpoint["queryObject"]["unit"],
+                            "value": Number(serialPacket.get(2))
+                        };
+                        console.log(jsonData);
+                        axios_1.default.post(`${url}`, jsonData, { headers: headers })
+                            .then((success) => {
+                            responsePacket.append("DATA SENT");
+                            responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                            resolve(responsePacket);
+                        })
+                            .catch((error) => {
+                            console.log(error);
+                            reject("COULD NOT SHARE DATA");
+                        });
+                    }
+                    catch (e) {
+                        reject("COULD NOT SHARE DATA");
+                    }
+                    break;
+                //case "weather":
+                case "carbon":
+                    if (queryStrMap["endpoint"] == "index") {
+                        try {
+                            axios_1.default.get(`${url}`)
+                                .then((success) => {
+                                console.log(success);
+                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
+                                responsePacket.append(data);
+                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                reject("COULD NOT GET DATA");
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT GET DATA");
+                        }
+                    }
+                    else if (queryStrMap["endpoint"] == "value") {
+                        try {
+                            axios_1.default.get(`${url}`)
+                                .then((success) => {
+                                console.log(success);
+                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
+                                responsePacket.append(data);
+                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                reject("COULD NOT GET DATA");
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT GET DATA");
+                        }
+                    }
+                    else if (queryStrMap["endpoint"] == "genmix") {
+                        try {
+                            axios_1.default.get(`${url}`)
+                                .then((success) => {
+                                console.log(success);
+                                let data = String(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
+                                console.log(data);
+                                responsePacket.append(data);
+                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                reject("COULD NOT GET DATA");
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT GET DATA");
+                        }
+                    }
+                    break;
+                default:
+                    reject(`UNKNOWN SERVICE ${queryStrMap["service"]}`);
+            }
         });
     }
     /***
@@ -35483,7 +35624,7 @@ class RequestHandler {
 }
 exports.RequestHandler = RequestHandler;
 
-},{"./Debug":50,"./SerialPacket":53,"axios":2,"jspath":43}],52:[function(require,module,exports){
+},{"./Debug":52,"./SerialPacket":55,"axios":2,"date-time":39,"jspath":44}],54:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35499,6 +35640,7 @@ const SerialPacket_1 = require("./SerialPacket");
 const Debug_1 = require("./Debug");
 const RequestHandler_1 = require("./RequestHandler");
 const Mutex_1 = require("async-mutex/lib/Mutex");
+const Config_1 = require("./constants/Config");
 class SerialHandler {
     /***
      * Creates a SerialHandler with a chosen DAPLink target and a baud given rate.
@@ -35530,15 +35672,16 @@ class SerialHandler {
             try {
                 let requestHandler = new RequestHandler_1.RequestHandler(this.hubVariables); // create a RequestHandler to handle this request
                 serialPacket = SerialPacket_1.SerialPacket.dataToSerialPacket(data); // convert the data to a SerialPacket
-                console.log("Input Packet: ");
-                //TODO: Debug stuff, remove once finished here
-                let rawPacket = [];
-                for (let i = 0; i < data.length; i++) {
-                    rawPacket.push(data.charCodeAt(i));
+                if (Config_1.DEBUG) {
+                    console.log("Input Packet: ");
+                    let rawPacket = [];
+                    for (let i = 0; i < data.length; i++) {
+                        rawPacket.push(data.charCodeAt(i));
+                    }
+                    console.log(data);
+                    console.log(rawPacket);
+                    console.log(serialPacket);
                 }
-                console.log(data);
-                console.log(rawPacket);
-                console.log(serialPacket);
                 // handle the request and await the promised resolve packet or reason for error
                 requestHandler.handleRequest(serialPacket)
                     .then((responsePacket) => {
@@ -35568,17 +35711,18 @@ class SerialHandler {
      */
     sendSerialPacket(serialPacket) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log("Output Packet");
-            console.log(serialPacket);
+            if (Config_1.DEBUG) {
+                console.log("Output Packet");
+                console.log(serialPacket);
+                console.log(serialPacket.getFormattedPacket());
+            }
             let packet = String.fromCharCode(...serialPacket.getFormattedPacket());
-            console.log("RAW PACKET: ");
-            console.log(serialPacket.getFormattedPacket());
             try {
                 // acquire mutex to prevent concurrent serial writes
                 this.serialMutex.acquire()
                     .then((release) => {
-                    this.targetDevice.serialWrite(packet);
-                    release(); // release mutex (must be released or will lock all communication)
+                    this.targetDevice.serialWrite(packet)
+                        .then(() => release()); // release mutex (must be released or will lock all communication)
                 });
             }
             catch (e) {
@@ -35617,7 +35761,7 @@ class SerialHandler {
 }
 exports.SerialHandler = SerialHandler;
 
-},{"./Debug":50,"./RequestHandler":51,"./SerialPacket":53,"async-mutex/lib/Mutex":1,"dapjs":30}],53:[function(require,module,exports){
+},{"./Debug":52,"./RequestHandler":53,"./SerialPacket":55,"./constants/Config":59,"async-mutex/lib/Mutex":1,"dapjs":30}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Debug_1 = require("./Debug");
@@ -35813,16 +35957,12 @@ class SerialPacket {
      * while retaining the request type (e.g. REST, hello, etc.)
      */
     clearAndError(errorMessage) {
-        //this.request_type = 0;
-        // clear all other status codes
-        /*for(let status in RequestStatus) {
-            this.clearRequestBit(Number(status));
-        }*/
         // set status code to REQUEST_STATUS_ERROR
-        //this.setRequestBit(RequestStatus.REQUEST_STATUS_ERROR); //FIXME: The Python hub uses REQUEST_STATUS_OK to reply with an error
         this.setRequestBit(RequestStatus.REQUEST_STATUS_OK); //FIXME: The Python hub uses REQUEST_STATUS_OK to reply with an error
+        //this.setRequestBit(RequestStatus.REQUEST_STATUS_ERROR); //FIXME: The Python hub uses REQUEST_STATUS_OK to reply with an error
         // clear payload and add an error message if necessary
         this.clear();
+        // append message if there is one
         if (errorMessage.length > 0)
             this.append(errorMessage);
         return this;
@@ -35906,7 +36046,7 @@ class SerialPacket {
 }
 exports.SerialPacket = SerialPacket;
 
-},{"./Debug":50,"bufferpack":29}],54:[function(require,module,exports){
+},{"./Debug":52,"bufferpack":29}],56:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35926,7 +36066,7 @@ const login_1 = require("./api/login");
 const axios_1 = require("axios");
 const DEFAULT_BAUD = 115200;
 const DEFAULT_TRANSLATION_POLLING = 60000;
-const DEFAULT_STATUS = "Connect to a micro:bit and flash the bridging software";
+const DEFAULT_STATUS = "Connect to a micro:bit to start the hub";
 const statusText = $('#status');
 const connectButton = $('#connect');
 const testButton = $('#flash');
@@ -35959,7 +36099,8 @@ let hub_variables = {
     "dapjs": {
         "serial_delay": 200,
         "baud_rate": 115200,
-        "flash_timeout": 5000
+        "flash_timeout": 5000,
+        "reset_pause": 1000
     }
 };
 /***
@@ -35997,14 +36138,22 @@ getTranslations();
  */
 function selectDevice() {
     setStatus("Select a device");
-    navigator.usb.requestDevice({
-        filters: [{ vendorId: 0xD28 }]
-    })
-        .then((device) => {
-        connect(device, hub_variables.dapjs.baud_rate);
-    })
-        .catch((error) => {
-        setStatus(error);
+    return new Promise((resolve, reject) => {
+        navigator.usb.requestDevice({
+            filters: [{ vendorId: 0xD28 }]
+        })
+            .then((device) => {
+            connect(device, hub_variables.dapjs.baud_rate)
+                .then((success) => {
+                resolve("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
+            })
+                .catch((error) => {
+                reject("Failed to connect to device");
+            });
+        })
+            .catch((error) => {
+            reject(DEFAULT_STATUS);
+        });
     });
 }
 /***
@@ -36022,7 +36171,7 @@ function connect(device, baud) {
     serialHandler = new SerialHandler_1.SerialHandler(target, hub_variables, baud);
     return target.connect()
         .then(() => {
-        setStatus("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
+        //setStatus("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
         target.setSerialBaudrate(baud); // set the baud rate after connecting
         serialNumber = device.serialNumber; // store serial number for comparison when disconnecting
         return target.getSerialBaudrate();
@@ -36031,6 +36180,7 @@ function connect(device, baud) {
         target.startSerialRead(hub_variables.dapjs.serial_delay);
         console.log(`Listening at ${baud} baud...`);
         targetDevice = target;
+        targetDevice.reset();
         // start a timeout check to see if hub authenticates or not for automatic flashing
         setTimeout(() => {
             if (!hub_variables.authenticated) {
@@ -36076,9 +36226,16 @@ function downloadHex() {
 function flashDevice(targetDevice) {
     console.log("Downloading hub hex file");
     downloadHex().then((success) => {
-        console.log(success);
+        console.log(success["data"]);
         let program = new Uint8Array(success["data"]).buffer;
-        //targetDevice.flash(program);
+        console.log(program);
+        /*targetDevice.flash(program)
+            .then((success) => {
+                console.log(success);
+            })
+            .catch((error) => {
+                console.log(error);
+            });*/
     });
 }
 /***
@@ -36111,8 +36268,14 @@ navigator.usb.addEventListener('disconnect', (device) => {
  */
 connectButton.on('click', () => {
     if (connectButton.text() == "Connect") {
-        connectButton.text("Disconnect");
-        selectDevice();
+        selectDevice()
+            .then((success) => {
+            connectButton.text("Disconnect");
+            setStatus(success);
+        })
+            .catch((error) => {
+            setStatus(error);
+        });
     }
     else {
         disconnect();
@@ -36126,35 +36289,7 @@ connectButton.on('click', () => {
 testButton.on('click', () => {
     console.log("Flashing currently not implemented");
     // TODO: Currently using this section for testing, this is where the flashing code will go
-    // targetDevice.flash(hexFile);
-    /*let serialPacket = new SerialPacket(1, 139, 207, 2);
-    let responsePacket = new SerialPacket(1, 139, 207, 2);
-    serialPacket.append("/share/historicalData/");
-    serialPacket.append("30");
-    serialPacket.append("temp");
-    serialPacket.append("D22");
-    serialPacket.append("c");
-
-    console.log(serialPacket.getFormattedPacket());
-    console.log(serialPacket.getFormattedPayloadParts().length);*/
-    /*console.log(processRESTRequest(serialPacket, responsePacket, hub_variables["translations"]["json"]["share"], "POST"));*/
-    /*RequestHandler.processGETRequest("https://api.carbonintensity.org.uk/generation/")
-        .then((response) => {
-            console.log(response);
-            console.log(response.data);
-            console.log(jspath.apply('.data.generationmix.{.fuel == "coal"}.perclel', response.data));
-        })
-        .catch((error) => {
-            console.log(error);
-        });*/
-    /*    axios.get(`https://api.carbonintensity.org.uk/intensity/`)
-            .then((success) => {
-                console.log(success);
-            })
-            .catch((error) => {
-                console.log("ERROR" + error);
-            });*/
-    flashDevice(targetDevice);
+    //flashDevice(targetDevice);
 });
 /**
  * Logout button click handler
@@ -36196,7 +36331,7 @@ window.onload = () => {
     //$('#main').show();
 };
 
-},{"./Debug":50,"./SerialHandler":52,"./api/login":56,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":42}],55:[function(require,module,exports){
+},{"./Debug":52,"./SerialHandler":54,"./api/login":58,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":43}],57:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36314,7 +36449,7 @@ AbstractApiService.UNAUTHORIZED_CODE = 401; // Default unauthorized code
 AbstractApiService.FETCH_ACCESS_TOKEN_ENDPOINT = '/token/refresh/';
 exports.default = AbstractApiService;
 
-},{"../constants/Config":57,"axios":2,"jwt-decode":47,"lodash":48}],56:[function(require,module,exports){
+},{"../constants/Config":59,"axios":2,"jwt-decode":48,"lodash":49}],58:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36353,7 +36488,7 @@ class AuthAPIService extends core_1.default {
 }
 exports.default = new AuthAPIService();
 
-},{"../constants/Config":57,"./core":55,"axios":2}],57:[function(require,module,exports){
+},{"../constants/Config":59,"./core":57,"axios":2}],59:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // TODO for local development. Request to stage/prod are restricted by CORS
@@ -36379,4 +36514,4 @@ var RoleNames;
 exports.DEBUG = true;
 exports.TIMESTAMPS = true;
 
-},{}]},{},[54]);
+},{}]},{},[56]);

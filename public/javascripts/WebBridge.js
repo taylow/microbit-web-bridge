@@ -17,7 +17,7 @@ const login_1 = require("./api/login");
 const axios_1 = require("axios");
 const DEFAULT_BAUD = 115200;
 const DEFAULT_TRANSLATION_POLLING = 60000;
-const DEFAULT_STATUS = "Connect to a micro:bit and flash the bridging software";
+const DEFAULT_STATUS = "Connect to a micro:bit to start the hub";
 const statusText = $('#status');
 const connectButton = $('#connect');
 const testButton = $('#flash');
@@ -50,7 +50,8 @@ let hub_variables = {
     "dapjs": {
         "serial_delay": 200,
         "baud_rate": 115200,
-        "flash_timeout": 5000
+        "flash_timeout": 5000,
+        "reset_pause": 1000
     }
 };
 /***
@@ -88,14 +89,22 @@ getTranslations();
  */
 function selectDevice() {
     setStatus("Select a device");
-    navigator.usb.requestDevice({
-        filters: [{ vendorId: 0xD28 }]
-    })
-        .then((device) => {
-        connect(device, hub_variables.dapjs.baud_rate);
-    })
-        .catch((error) => {
-        setStatus(error);
+    return new Promise((resolve, reject) => {
+        navigator.usb.requestDevice({
+            filters: [{ vendorId: 0xD28 }]
+        })
+            .then((device) => {
+            connect(device, hub_variables.dapjs.baud_rate)
+                .then((success) => {
+                resolve("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
+            })
+                .catch((error) => {
+                reject("Failed to connect to device");
+            });
+        })
+            .catch((error) => {
+            reject(DEFAULT_STATUS);
+        });
     });
 }
 /***
@@ -113,7 +122,7 @@ function connect(device, baud) {
     serialHandler = new SerialHandler_1.SerialHandler(target, hub_variables, baud);
     return target.connect()
         .then(() => {
-        setStatus("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
+        //setStatus("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
         target.setSerialBaudrate(baud); // set the baud rate after connecting
         serialNumber = device.serialNumber; // store serial number for comparison when disconnecting
         return target.getSerialBaudrate();
@@ -122,6 +131,7 @@ function connect(device, baud) {
         target.startSerialRead(hub_variables.dapjs.serial_delay);
         console.log(`Listening at ${baud} baud...`);
         targetDevice = target;
+        targetDevice.reset();
         // start a timeout check to see if hub authenticates or not for automatic flashing
         setTimeout(() => {
             if (!hub_variables.authenticated) {
@@ -167,9 +177,16 @@ function downloadHex() {
 function flashDevice(targetDevice) {
     console.log("Downloading hub hex file");
     downloadHex().then((success) => {
-        console.log(success);
+        console.log(success["data"]);
         let program = new Uint8Array(success["data"]).buffer;
-        //targetDevice.flash(program);
+        console.log(program);
+        /*targetDevice.flash(program)
+            .then((success) => {
+                console.log(success);
+            })
+            .catch((error) => {
+                console.log(error);
+            });*/
     });
 }
 /***
@@ -202,8 +219,14 @@ navigator.usb.addEventListener('disconnect', (device) => {
  */
 connectButton.on('click', () => {
     if (connectButton.text() == "Connect") {
-        connectButton.text("Disconnect");
-        selectDevice();
+        selectDevice()
+            .then((success) => {
+            connectButton.text("Disconnect");
+            setStatus(success);
+        })
+            .catch((error) => {
+            setStatus(error);
+        });
     }
     else {
         disconnect();
@@ -217,35 +240,7 @@ connectButton.on('click', () => {
 testButton.on('click', () => {
     console.log("Flashing currently not implemented");
     // TODO: Currently using this section for testing, this is where the flashing code will go
-    // targetDevice.flash(hexFile);
-    /*let serialPacket = new SerialPacket(1, 139, 207, 2);
-    let responsePacket = new SerialPacket(1, 139, 207, 2);
-    serialPacket.append("/share/historicalData/");
-    serialPacket.append("30");
-    serialPacket.append("temp");
-    serialPacket.append("D22");
-    serialPacket.append("c");
-
-    console.log(serialPacket.getFormattedPacket());
-    console.log(serialPacket.getFormattedPayloadParts().length);*/
-    /*console.log(processRESTRequest(serialPacket, responsePacket, hub_variables["translations"]["json"]["share"], "POST"));*/
-    /*RequestHandler.processGETRequest("https://api.carbonintensity.org.uk/generation/")
-        .then((response) => {
-            console.log(response);
-            console.log(response.data);
-            console.log(jspath.apply('.data.generationmix.{.fuel == "coal"}.perclel', response.data));
-        })
-        .catch((error) => {
-            console.log(error);
-        });*/
-    /*    axios.get(`https://api.carbonintensity.org.uk/intensity/`)
-            .then((success) => {
-                console.log(success);
-            })
-            .catch((error) => {
-                console.log("ERROR" + error);
-            });*/
-    flashDevice(targetDevice);
+    //flashDevice(targetDevice);
 });
 /**
  * Logout button click handler

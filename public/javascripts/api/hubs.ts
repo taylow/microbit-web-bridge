@@ -1,5 +1,5 @@
 import axios from 'axios';
-import AbstractApiService from './core';
+import {AbstractApiService} from './core';
 
 interface Hub {
     id: number,

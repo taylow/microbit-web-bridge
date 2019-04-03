@@ -35074,7 +35074,7 @@ function debug(message, type) {
 }
 exports.debug = debug;
 
-},{"./constants/Config":60,"jquery":43}],53:[function(require,module,exports){
+},{"./constants/Config":61,"jquery":43}],53:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35090,6 +35090,7 @@ const SerialPacket_1 = require("./SerialPacket");
 const Debug_1 = require("./Debug");
 const axios_1 = require("axios");
 const date_time_1 = require("date-time");
+const weather_1 = require("./api/weather");
 class RequestHandler {
     constructor(hub_variables) {
         this.translations = hub_variables["translations"]["json"]; // grab the translations part for easier access
@@ -35161,56 +35162,56 @@ class RequestHandler {
         return out;
     }
     processRESTRequest(serialPacket, responsePacket, translation, requestType) {
-        return new Promise((resolve, reject) => {
-            try {
-                // console.log(translation);
-                // gets the format for the micro:bit query string
-                let mbQueryString = translation[requestType]["microbitQueryString"]; // get microbitQueryString from translation
-                // console.log(mbQueryString);
-                // maps the query string coming from the micro:bit to the translated format
-                let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
-                console.log(queryStrMap);
-                // gets the baseURL for the specified service
-                let baseURL = translation[requestType]["baseURL"];
-                console.log(baseURL);
-                // gets the endpoint json
-                let endpoint = translation[requestType]["endpoint"][queryStrMap["endpoint"]];
-                console.log(endpoint);
-                // gets the queryObject for the specified endpoint
-                let queryObject = endpoint["queryObject"];
-                // if there was no query object, set it to blank
-                if (queryObject == null)
-                    queryObject = [];
-                // console.log(queryObject);
-                // regex for finding url parts (e.g. api_endpoint, etc)
-                let urlPart;
-                let regexp = new RegExp("%([^%]*)%", "g"); //"(?=\\w*%)%*\\w+%*");
-                let newURL = baseURL;
-                // loop through the URL and replace any % surrounded url parts with their queryObject counterparts
-                while ((urlPart = regexp.exec(baseURL)) !== null) {
-                    // grab the default parameter from the URL
-                    let sectionParts = urlPart[1].split("?=");
-                    if (sectionParts[0] in queryObject) {
-                        // if there is a queryObject part, replace it with the value
-                        newURL = newURL.replace(urlPart[0], queryObject[sectionParts[0]]);
-                    }
-                    else if (sectionParts.length > 1) {
-                        // if there is a default, set it to it
-                        newURL = newURL.replace(urlPart[0], sectionParts[1]);
-                    }
-                    else {
-                        // if none of the above, replace with nothing
-                        newURL = newURL.replace(urlPart[0], "");
-                    }
+        try {
+            // console.log(translation);
+            // gets the format for the micro:bit query string
+            let mbQueryString = translation[requestType]["microbitQueryString"]; // get microbitQueryString from translation
+            //console.log(mbQueryString);
+            // maps the query string coming from the micro:bit to the translated format
+            let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
+            console.log(queryStrMap);
+            // gets the baseURL for the specified service
+            let baseURL = translation[requestType]["baseURL"];
+            console.log(baseURL);
+            // gets the endpoint json
+            let endpoint = queryStrMap["endpoint"] ? translation[requestType]["endpoint"][queryStrMap["endpoint"]] : {};
+            console.log(endpoint);
+            // gets the queryObject for the specified endpoint
+            let queryObject = endpoint["queryObject"];
+            // if there was no query object, set it to blank
+            if (queryObject == null)
+                queryObject = [];
+            //console.log(queryObject);
+            // regex for finding url parts (e.g. api_endpoint, etc)
+            let urlPart;
+            let regexp = new RegExp("%([^%]*)%", "g"); //"(?=\\w*%)%*\\w+%*");
+            let newURL = baseURL;
+            // loop through the URL and replace any % surrounded url parts with their queryObject counterparts
+            while ((urlPart = regexp.exec(baseURL)) !== null) {
+                // grab the default parameter from the URL
+                let sectionParts = urlPart[1].split("?=");
+                if (sectionParts[0] in queryObject) {
+                    // if there is a queryObject part, replace it with the value
+                    newURL = newURL.replace(urlPart[0], queryObject[sectionParts[0]]);
                 }
-                Debug_1.debug(`Service: ${queryStrMap["service"].toUpperCase()}`, Debug_1.DebugType.DEBUG);
-                return this.temporaryTranslation(queryStrMap, newURL, endpoint, responsePacket, serialPacket, requestType);
+                else if (sectionParts.length > 1) {
+                    // if there is a default, set it to it
+                    newURL = newURL.replace(urlPart[0], sectionParts[1]);
+                }
+                else {
+                    // if none of the above, replace with nothing
+                    newURL = newURL.replace(urlPart[0], "");
+                }
             }
-            catch (e) {
-                console.log(e);
+            Debug_1.debug(`Service: ${queryStrMap["service"].toUpperCase()}`, Debug_1.DebugType.DEBUG);
+            return this.temporaryTranslation(queryStrMap, newURL, endpoint, responsePacket, serialPacket, requestType);
+        }
+        catch (e) {
+            console.log(e);
+            return new Promise((resolve, reject) => {
                 reject("REST REQUEST ERROR");
-            }
-        });
+            });
+        }
     }
     /***
      * TODO: Temporary hardcoded parts for temporary functionality. Very messy, mostly copied from the Python hub. This will be replaced with the translations.
@@ -35224,9 +35225,11 @@ class RequestHandler {
      */
     temporaryTranslation(queryStrMap, url, endpoint, responsePacket, serialPacket, requestType) {
         return new Promise((resolve, reject) => {
+            const schoolID = this.hub_variables["credentials"]["school_id"];
+            const hubID = this.hub_variables["credentials"]["pi_id"];
             let headers = {
-                "school-id": this.hub_variables["credentials"]["school_id"],
-                "pi-id": this.hub_variables["credentials"]["pi_id"],
+                "school-id": schoolID,
+                "pi-id": hubID,
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             };
@@ -35425,7 +35428,33 @@ class RequestHandler {
                         reject("COULD NOT SHARE DATA");
                     }
                     break;
-                //case "weather":
+                case "weather":
+                    const weatherAPIService = new weather_1.default(schoolID, hubID);
+                    const end_point = serialPacket.get(0);
+                    const location = serialPacket.get(2);
+                    const isForCity = serialPacket.get(1) === 0;
+                    const queryParams = {
+                        [isForCity ? 'city' : 'postal_code']: location,
+                    };
+                    let request = weatherAPIService.getCurrentWeather;
+                    if (end_point === '/weather/forecastTomorrow/') {
+                        request = weatherAPIService.getTomorrowWeather;
+                    }
+                    request(queryParams).then((weather) => {
+                        if (end_point === '/weather/temperature/') {
+                            responsePacket.append(weather.temperature.average.toString());
+                        }
+                        else if (end_point === '/weather/wind/') {
+                            const degree = weather.wind.degree && this.degToCompass(weather.wind.degree);
+                            responsePacket.append(degree);
+                        }
+                        else if (end_point === '/weather/forecastNow/' || end_point === '/weather/forecastTomorrow/') {
+                            responsePacket.append(weather.detailed_status);
+                        }
+                        resolve(responsePacket);
+                    }).catch(() => {
+                        reject("NOT AVAILABLE");
+                    });
                 case "carbon":
                     if (queryStrMap["endpoint"] == "index") {
                         try {
@@ -35614,10 +35643,15 @@ class RequestHandler {
             reject(``);
         });
     }
+    degToCompass(num) {
+        const val = Math.floor((num / 22.5) + 0.5);
+        const arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+        return arr[(val % 16)];
+    }
 }
 exports.RequestHandler = RequestHandler;
 
-},{"./Debug":52,"./SerialPacket":55,"axios":2,"date-time":39,"jspath":44}],54:[function(require,module,exports){
+},{"./Debug":52,"./SerialPacket":55,"./api/weather":60,"axios":2,"date-time":39,"jspath":44}],54:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35754,7 +35788,7 @@ class SerialHandler {
 }
 exports.SerialHandler = SerialHandler;
 
-},{"./Debug":52,"./RequestHandler":53,"./SerialPacket":55,"./constants/Config":60,"async-mutex/lib/Mutex":1,"dapjs":30}],55:[function(require,module,exports){
+},{"./Debug":52,"./RequestHandler":53,"./SerialPacket":55,"./constants/Config":61,"async-mutex/lib/Mutex":1,"dapjs":30}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Debug_1 = require("./Debug");
@@ -36084,7 +36118,7 @@ let hub_variables = {
     },
     "translations": {
         //"url": "https://raw.githubusercontent.com/Taylor-Woodcock/microbit-web-bridge/master/translations.json",
-        "url": "/translations",
+        "url": "translations.json",
         "poll_updates": false,
         "poll_time": DEFAULT_TRANSLATION_POLLING,
         "json": {}
@@ -36115,8 +36149,9 @@ function getTranslations() {
             dataType: 'JSON',
             cache: false,
             timeout: 10000,
-            error: () => {
+            error: (error) => {
                 Debug_1.debug(`Error receiving translations`, Debug_1.DebugType.ERROR);
+                console.log(error);
             },
             success: (response) => {
                 if (hub_variables["translations"]["json"] == {} || response["version"] != hub_variables["translations"]["json"]["version"]) {
@@ -36308,35 +36343,6 @@ flashButton.on('click', () => {
             alert("Flashing error");
         });
     });
-    // TODO: Currently using this section for testing, this is where the flashing code will go
-    // targetDevice.flash(hexFile);
-    /*let serialPacket = new SerialPacket(1, 139, 207, 2);
-    let responsePacket = new SerialPacket(1, 139, 207, 2);
-    serialPacket.append("/share/historicalData/");
-    serialPacket.append("30");
-    serialPacket.append("temp");
-    serialPacket.append("D22");
-    serialPacket.append("c");
-
-    console.log(serialPacket.getFormattedPacket());
-    console.log(serialPacket.getFormattedPayloadParts().length);*/
-    /*console.log(processRESTRequest(serialPacket, responsePacket, hub_variables["translations"]["json"]["share"], "POST"));*/
-    /*RequestHandler.processGETRequest("https://api.carbonintensity.org.uk/generation/")
-        .then((response) => {
-            console.log(response);
-            console.log(response.data);
-            console.log(jspath.apply('.data.generationmix.{.fuel == "coal"}.perclel', response.data));
-        })
-        .catch((error) => {
-            console.log(error);
-        });*/
-    /*    axios.get(`https://api.carbonintensity.org.uk/intensity/`)
-            .then((success) => {
-                console.log(success);
-            })
-            .catch((error) => {
-                console.log("ERROR" + error);
-            });*/
 });
 /**
  * Logout button click handler
@@ -36502,7 +36508,7 @@ AbstractApiService.ACCESS_TOKEN_PARAM = 'access';
 AbstractApiService.REFRESH_TOKEN_PARAM = 'refresh';
 AbstractApiService.UNAUTHORIZED_CODE = 401; // Default unauthorized code
 AbstractApiService.FETCH_ACCESS_TOKEN_ENDPOINT = '/token/refresh/';
-exports.default = AbstractApiService;
+exports.AbstractApiService = AbstractApiService;
 class AbstractHubAuthApiService {
     constructor(schoolId, hubId) {
         axios_1.default.defaults.headers.post['Content-Type'] = 'application/json';
@@ -36512,7 +36518,7 @@ class AbstractHubAuthApiService {
 }
 exports.AbstractHubAuthApiService = AbstractHubAuthApiService;
 
-},{"../constants/Config":60,"axios":2,"jwt-decode":48,"lodash":49}],58:[function(require,module,exports){
+},{"../constants/Config":61,"axios":2,"jwt-decode":48,"lodash":49}],58:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36525,7 +36531,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = require("axios");
 const core_1 = require("./core");
-class HubsAPIService extends core_1.default {
+class HubsAPIService extends core_1.AbstractApiService {
     getWebHubs() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -36568,7 +36574,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = require("axios");
 const core_1 = require("./core");
 const Config_1 = require("../constants/Config");
-class AuthAPIService extends core_1.default {
+class AuthAPIService extends core_1.AbstractApiService {
     login(username, password) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -36577,8 +36583,8 @@ class AuthAPIService extends core_1.default {
                     password
                 });
                 console.log(response);
-                localStorage.setItem(core_1.default.ACCESS_TOKEN_PARAM, response.data.access);
-                localStorage.setItem(core_1.default.REFRESH_TOKEN_PARAM, response.data.refresh);
+                localStorage.setItem(core_1.AbstractApiService.ACCESS_TOKEN_PARAM, response.data.access);
+                localStorage.setItem(core_1.AbstractApiService.REFRESH_TOKEN_PARAM, response.data.refresh);
             }
             catch (error) {
                 throw new Error(JSON.stringify(error.response.data));
@@ -36593,7 +36599,46 @@ class AuthAPIService extends core_1.default {
 }
 exports.default = new AuthAPIService();
 
-},{"../constants/Config":60,"./core":57,"axios":2}],60:[function(require,module,exports){
+},{"../constants/Config":61,"./core":57,"axios":2}],60:[function(require,module,exports){
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const axios_1 = require("axios");
+const core_1 = require("./core");
+class WeatherHubAPIService extends core_1.AbstractHubAuthApiService {
+    getCurrentWeather(queryParams) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const response = yield axios_1.default.get('/micro-bit/weather/current/', { params: queryParams });
+                return response.data;
+            }
+            catch (error) {
+                throw new Error(JSON.stringify(error.response.data));
+            }
+        });
+    }
+    getTomorrowWeather(queryParams) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const response = yield axios_1.default.get('/micro-bit/weather/forecast/tomorrow/', { params: queryParams });
+                return response.data;
+            }
+            catch (error) {
+                throw new Error(JSON.stringify(error.response.data));
+            }
+        });
+    }
+}
+exports.default = WeatherHubAPIService;
+
+},{"./core":57,"axios":2}],61:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // TODO for local development. Request to stage/prod are restricted by CORS

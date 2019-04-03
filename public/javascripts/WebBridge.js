@@ -42,7 +42,7 @@ let hub_variables = {
     },
     "translations": {
         //"url": "https://raw.githubusercontent.com/Taylor-Woodcock/microbit-web-bridge/master/translations.json",
-        "url": "/translations",
+        "url": "translations.json",
         "poll_updates": false,
         "poll_time": DEFAULT_TRANSLATION_POLLING,
         "json": {}
@@ -73,8 +73,9 @@ function getTranslations() {
             dataType: 'JSON',
             cache: false,
             timeout: 10000,
-            error: () => {
+            error: (error) => {
                 Debug_1.debug(`Error receiving translations`, Debug_1.DebugType.ERROR);
+                console.log(error);
             },
             success: (response) => {
                 if (hub_variables["translations"]["json"] == {} || response["version"] != hub_variables["translations"]["json"]["version"]) {
@@ -266,35 +267,6 @@ flashButton.on('click', () => {
             alert("Flashing error");
         });
     });
-    // TODO: Currently using this section for testing, this is where the flashing code will go
-    // targetDevice.flash(hexFile);
-    /*let serialPacket = new SerialPacket(1, 139, 207, 2);
-    let responsePacket = new SerialPacket(1, 139, 207, 2);
-    serialPacket.append("/share/historicalData/");
-    serialPacket.append("30");
-    serialPacket.append("temp");
-    serialPacket.append("D22");
-    serialPacket.append("c");
-
-    console.log(serialPacket.getFormattedPacket());
-    console.log(serialPacket.getFormattedPayloadParts().length);*/
-    /*console.log(processRESTRequest(serialPacket, responsePacket, hub_variables["translations"]["json"]["share"], "POST"));*/
-    /*RequestHandler.processGETRequest("https://api.carbonintensity.org.uk/generation/")
-        .then((response) => {
-            console.log(response);
-            console.log(response.data);
-            console.log(jspath.apply('.data.generationmix.{.fuel == "coal"}.perclel', response.data));
-        })
-        .catch((error) => {
-            console.log(error);
-        });*/
-    /*    axios.get(`https://api.carbonintensity.org.uk/intensity/`)
-            .then((success) => {
-                console.log(success);
-            })
-            .catch((error) => {
-                console.log("ERROR" + error);
-            });*/
 });
 /**
  * Logout button click handler

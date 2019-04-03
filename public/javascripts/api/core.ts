@@ -4,7 +4,7 @@ import axios from 'axios';
 import {API_ENDPOINT, RoleNames} from "../constants/Config";
 
 
-export default class AbstractApiService {
+export class AbstractApiService {
   static ACCESS_TOKEN_PARAM = 'access';
 
   static REFRESH_TOKEN_PARAM = 'refresh';
@@ -137,5 +137,13 @@ export default class AbstractApiService {
   cleanTokens() {
     localStorage.removeItem(AbstractApiService.ACCESS_TOKEN_PARAM);
     localStorage.removeItem(AbstractApiService.REFRESH_TOKEN_PARAM)
+  }
+}
+
+export class AbstractHubAuthApiService {
+  constructor(schoolId: string, hubId: string) {
+    axios.defaults.headers.post['Content-Type'] = 'application/json';
+    axios.defaults.headers.common['school-id'] = schoolId;
+    axios.defaults.headers.common['pi-id'] = hubId;
   }
 }

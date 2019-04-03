@@ -2,29 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="43d1fedd-b6cd-49ca-92d3-cf9a5a4da8dc" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/public/javascripts/api/core.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/javascripts/api/core.js.map" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/javascripts/api/hubs.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/javascripts/api/hubs.js.map" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/javascripts/api/login.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/javascripts/api/login.js.map" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/javascripts/api/weather.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/javascripts/api/weather.js.map" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/javascripts/api/weather.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/javascripts/RequestHandler.js" beforeDir="false" afterPath="$PROJECT_DIR$/public/javascripts/RequestHandler.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/javascripts/RequestHandler.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/public/javascripts/RequestHandler.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/javascripts/RequestHandler.ts" beforeDir="false" afterPath="$PROJECT_DIR$/public/javascripts/RequestHandler.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/javascripts/WebBridge.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/public/javascripts/WebBridge.bundle.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/javascripts/WebBridge.js" beforeDir="false" afterPath="$PROJECT_DIR$/public/javascripts/WebBridge.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/javascripts/WebBridge.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/public/javascripts/WebBridge.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/javascripts/WebBridge.ts" beforeDir="false" afterPath="$PROJECT_DIR$/public/javascripts/WebBridge.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/javascripts/api/core.ts" beforeDir="false" afterPath="$PROJECT_DIR$/public/javascripts/api/core.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/javascripts/api/hubs.ts" beforeDir="false" afterPath="$PROJECT_DIR$/public/javascripts/api/hubs.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/javascripts/api/login.ts" beforeDir="false" afterPath="$PROJECT_DIR$/public/javascripts/api/login.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/translations.json" beforeDir="false" afterPath="$PROJECT_DIR$/translations.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/views/index.pug" beforeDir="false" afterPath="$PROJECT_DIR$/views/index.pug" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -58,14 +37,23 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/public/javascripts/RequestHandler.ts">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="280">
-              <caret line="384" column="22" selection-start-line="384" selection-start-column="22" selection-end-line="384" selection-end-column="22" />
+            <state relative-caret-position="6630">
+              <caret line="390" column="68" lean-forward="true" selection-start-line="390" selection-start-column="68" selection-end-line="390" selection-end-column="68" />
               <folding>
                 <element signature="e#0#33#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/.gitignore">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="51">
+              <caret line="3" column="27" selection-start-line="3" selection-start-column="27" selection-end-line="3" selection-end-column="27" />
             </state>
           </provider>
         </entry>
@@ -80,6 +68,7 @@
       <list>
         <option value="$PROJECT_DIR$/public/javascripts/WebBridge.ts" />
         <option value="$PROJECT_DIR$/public/javascripts/RequestHandler.ts" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
@@ -160,12 +149,12 @@
       <option name="presentableId" value="Default" />
       <updated>1554203875823</updated>
       <workItem from="1554203877437" duration="1038000" />
-      <workItem from="1554301450885" duration="1375000" />
+      <workItem from="1554301450885" duration="2271000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="1463000" />
+    <option name="totallyTimeSpent" value="2359000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1176" extended-state="6" />
@@ -247,11 +236,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/RequestHandler.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="280">
-          <caret line="384" column="22" selection-start-line="384" selection-start-column="22" selection-end-line="384" selection-end-column="22" />
+        <state relative-caret-position="6630">
+          <caret line="390" column="68" lean-forward="true" selection-start-line="390" selection-start-column="68" selection-end-line="390" selection-end-column="68" />
           <folding>
             <element signature="e#0#33#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="51">
+          <caret line="3" column="27" selection-start-line="3" selection-start-column="27" selection-end-line="3" selection-end-column="27" />
         </state>
       </provider>
     </entry>

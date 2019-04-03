@@ -13,6 +13,7 @@ const SerialPacket_1 = require("./SerialPacket");
 const Debug_1 = require("./Debug");
 const RequestHandler_1 = require("./RequestHandler");
 const Mutex_1 = require("async-mutex/lib/Mutex");
+const Config_1 = require("./constants/Config");
 class SerialHandler {
     /***
      * Creates a SerialHandler with a chosen DAPLink target and a baud given rate.
@@ -44,15 +45,16 @@ class SerialHandler {
             try {
                 let requestHandler = new RequestHandler_1.RequestHandler(this.hubVariables); // create a RequestHandler to handle this request
                 serialPacket = SerialPacket_1.SerialPacket.dataToSerialPacket(data); // convert the data to a SerialPacket
-                console.log("Input Packet: ");
-                //TODO: Debug stuff, remove once finished here
-                let rawPacket = [];
-                for (let i = 0; i < data.length; i++) {
-                    rawPacket.push(data.charCodeAt(i));
+                if (Config_1.DEBUG) {
+                    console.log("Input Packet: ");
+                    let rawPacket = [];
+                    for (let i = 0; i < data.length; i++) {
+                        rawPacket.push(data.charCodeAt(i));
+                    }
+                    console.log(data);
+                    console.log(rawPacket);
+                    console.log(serialPacket);
                 }
-                console.log(data);
-                console.log(rawPacket);
-                console.log(serialPacket);
                 // handle the request and await the promised resolve packet or reason for error
                 requestHandler.handleRequest(serialPacket)
                     .then((responsePacket) => {
@@ -82,17 +84,18 @@ class SerialHandler {
      */
     sendSerialPacket(serialPacket) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log("Output Packet");
-            console.log(serialPacket);
+            if (Config_1.DEBUG) {
+                console.log("Output Packet");
+                console.log(serialPacket);
+                console.log(serialPacket.getFormattedPacket());
+            }
             let packet = String.fromCharCode(...serialPacket.getFormattedPacket());
-            console.log("RAW PACKET: ");
-            console.log(serialPacket.getFormattedPacket());
             try {
                 // acquire mutex to prevent concurrent serial writes
                 this.serialMutex.acquire()
                     .then((release) => {
-                    this.targetDevice.serialWrite(packet);
-                    release(); // release mutex (must be released or will lock all communication)
+                    this.targetDevice.serialWrite(packet)
+                        .then(() => release()); // release mutex (must be released or will lock all communication)
                 });
             }
             catch (e) {

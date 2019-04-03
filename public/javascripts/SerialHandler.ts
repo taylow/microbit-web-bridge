@@ -3,6 +3,7 @@ import {RequestStatus, RequestType, SerialPacket} from "./SerialPacket";
 import {debug, DebugType} from "./Debug";
 import {RequestHandler} from "./RequestHandler";
 import Mutex from "async-mutex/lib/Mutex";
+import {DEBUG} from "./constants/Config";
 
 export class SerialHandler {
     private targetDevice: DAPLink;
@@ -26,6 +27,7 @@ export class SerialHandler {
         this.packetCount = 0;
         this.serialMutex = new Mutex();
         this.isPaused = false;
+
         this.setupSerialHandler();
     }
 
@@ -47,16 +49,17 @@ export class SerialHandler {
                 let requestHandler = new RequestHandler(this.hubVariables); // create a RequestHandler to handle this request
                 serialPacket = SerialPacket.dataToSerialPacket(data); // convert the data to a SerialPacket
 
-                console.log("Input Packet: ");
+                if(DEBUG) {
+                    console.log("Input Packet: ");
 
-                //TODO: Debug stuff, remove once finished here
-                let rawPacket = [];
-                for(let i = 0; i < data.length; i++) {
-                    rawPacket.push(data.charCodeAt(i));
+                    let rawPacket = [];
+                    for (let i = 0; i < data.length; i++) {
+                        rawPacket.push(data.charCodeAt(i));
+                    }
+                    console.log(data);
+                    console.log(rawPacket);
+                    console.log(serialPacket);
                 }
-                console.log(data);
-                console.log(rawPacket);
-                console.log(serialPacket);
 
                 // handle the request and await the promised resolve packet or reason for error
                 requestHandler.handleRequest(serialPacket)
@@ -88,20 +91,20 @@ export class SerialHandler {
      * @param serialPacket Serial packet to send to bridge micro:bit
      */
     public async sendSerialPacket(serialPacket: SerialPacket) {
-        console.log("Output Packet");
-        console.log(serialPacket);
+        if(DEBUG) {
+            console.log("Output Packet");
+            console.log(serialPacket);
+            console.log(serialPacket.getFormattedPacket());
+        }
 
         let packet = String.fromCharCode(...serialPacket.getFormattedPacket());
-
-        console.log("RAW PACKET: ");
-        console.log(serialPacket.getFormattedPacket());
 
         try {
             // acquire mutex to prevent concurrent serial writes
             this.serialMutex.acquire()
                 .then((release) => {
-                    this.targetDevice.serialWrite(packet);
-                    release(); // release mutex (must be released or will lock all communication)
+                    this.targetDevice.serialWrite(packet)
+                        .then(() => release()); // release mutex (must be released or will lock all communication)
                 });
         } catch(e) {
             console.log(e);

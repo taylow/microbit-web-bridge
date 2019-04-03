@@ -12,6 +12,7 @@ const jspath = require("jspath");
 const SerialPacket_1 = require("./SerialPacket");
 const Debug_1 = require("./Debug");
 const axios_1 = require("axios");
+const date_time_1 = require("date-time");
 class RequestHandler {
     constructor(hub_variables) {
         this.translations = hub_variables["translations"]["json"]; // grab the translations part for easier access
@@ -91,13 +92,13 @@ class RequestHandler {
                 // console.log(mbQueryString);
                 // maps the query string coming from the micro:bit to the translated format
                 let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
-                // console.log(queryStrMap);
+                console.log(queryStrMap);
                 // gets the baseURL for the specified service
                 let baseURL = translation[requestType]["baseURL"];
-                // console.log(baseURL);
+                console.log(baseURL);
                 // gets the endpoint json
                 let endpoint = translation[requestType]["endpoint"][queryStrMap["endpoint"]];
-                // console.log(endpoint);
+                console.log(endpoint);
                 // gets the queryObject for the specified endpoint
                 let queryObject = endpoint["queryObject"];
                 // if there was no query object, set it to blank
@@ -126,204 +127,285 @@ class RequestHandler {
                     }
                 }
                 Debug_1.debug(`Service: ${queryStrMap["service"].toUpperCase()}`, Debug_1.DebugType.DEBUG);
-                let headers = {
-                    "school-id": this.hub_variables["credentials"]["school_id"],
-                    "pi-id": this.hub_variables["credentials"]["pi_id"],
-                    'Content-Type': 'application/json',
-                };
-                //TODO: Temporary hardcoded parts for temporary functionality. This will be replaced with the translations
-                switch (queryStrMap["service"]) {
-                    case "share":
-                        if (queryStrMap["endpoint"] == "fetchData") {
-                            try {
-                                axios_1.default.get(`${newURL}${queryStrMap["unit"]}`, { headers: headers })
-                                    .then((success) => {
-                                    console.log(success);
-                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                                    responsePacket.append(data);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    console.log("ERROR" + error);
-                                    reject("COULD NOT GET VARIABLE");
-                                    return;
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT GET VARIABLE");
-                            }
-                        }
-                        else if (queryStrMap["endpoint"] == "shareData") {
-                            try {
-                                let jsonData = {
-                                    "key": serialPacket.get(2),
-                                    "value": serialPacket.get(1),
-                                    "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL")
-                                };
-                                axios_1.default.post(`${newURL}${serialPacket.get(2)}`, jsonData, { headers: headers })
-                                    .then((success) => {
-                                    responsePacket.append("DATA SENT");
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    reject("COULD NOT SHARE DATA");
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT SHARE DATA");
-                            }
-                        }
-                        else if (queryStrMap["endpoint"] == "historicalData") {
-                            try {
-                                let jsonData = {
-                                    "namespace": serialPacket.get(3),
-                                    "name": serialPacket.get(2),
-                                    "type": 0,
-                                    "unit": serialPacket.get(4),
-                                    "value": Number(serialPacket.get(1))
-                                };
-                                axios_1.default.post(`${newURL}`, jsonData, { headers: headers })
-                                    .then((success) => {
-                                    responsePacket.append("DATA SENT");
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    reject("COULD NOT SHARE DATA");
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT SHARE DATA");
-                            }
-                        }
-                        break;
-                    case "iot":
-                        let jsonData = {
-                            "value": null
-                        };
-                        if (requestType == "POST") {
-                            try {
-                                newURL = newURL.replace("^device^", serialPacket.get(1));
-                                if (queryStrMap["endpoint"] == "bulbState" || queryStrMap["endpoint"] == "switchState")
-                                    jsonData.value = serialPacket.get(2) == 0 ? "off" : "on";
-                                else
-                                    jsonData.value = String(serialPacket.get(2));
-                                axios_1.default.post(`${newURL}`, jsonData, { headers: headers })
-                                    .then((success) => {
-                                    responsePacket.append(jsonData.value);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    console.log(error.response);
-                                    if (error.response.status == 404) {
-                                        reject("DEVICE NOT FOUND");
-                                    }
-                                    else {
-                                        reject("COULD NOT REACH DEVICE");
-                                    }
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT REACH DEVICE");
-                            }
-                        }
-                        else if (requestType == "GET") {
-                            try {
-                                newURL = newURL.replace("^device^", queryStrMap["device"]);
-                                console.log(newURL);
-                                console.log(queryStrMap);
-                                axios_1.default.get(`${newURL}`, { headers: headers })
-                                    .then((success) => {
-                                    console.log(success);
-                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                                    responsePacket.append(data);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    console.log("ERROR" + error);
-                                    reject("COULD NOT GET VARIABLE");
-                                    return;
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT REACH DEVICE");
-                            }
-                        }
-                        break;
-                    //case "energy":
-                    //case "energyMeter":
-                    //case "weather":
-                    case "carbon":
-                        if (queryStrMap["endpoint"] == "index") {
-                            try {
-                                axios_1.default.get(`${newURL}`)
-                                    .then((success) => {
-                                    console.log(success);
-                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                                    responsePacket.append(data);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    reject("COULD NOT GET DATA");
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT GET DATA");
-                            }
-                        }
-                        else if (queryStrMap["endpoint"] == "value") {
-                            try {
-                                axios_1.default.get(`${newURL}`)
-                                    .then((success) => {
-                                    console.log(success);
-                                    let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                                    responsePacket.append(data);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    reject("COULD NOT GET DATA");
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT GET DATA");
-                            }
-                        }
-                        else if (queryStrMap["endpoint"] == "genmix") {
-                            try {
-                                axios_1.default.get(`${newURL}`)
-                                    .then((success) => {
-                                    console.log(success);
-                                    let data = String(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
-                                    console.log(data);
-                                    responsePacket.append(data);
-                                    responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
-                                    resolve(responsePacket);
-                                })
-                                    .catch((error) => {
-                                    reject("COULD NOT GET DATA");
-                                });
-                            }
-                            catch (e) {
-                                reject("COULD NOT GET DATA");
-                            }
-                        }
-                        break;
-                    default:
-                        reject(`UNKNOWN SERVICE ${queryStrMap["service"]}`);
-                }
+                return this.temporaryTranslation(queryStrMap, newURL, endpoint, responsePacket, serialPacket, requestType);
             }
             catch (e) {
                 console.log(e);
                 reject("REST REQUEST ERROR");
             }
-            // responsePacket.request_type |= RequestStatus.REQUEST_STATUS_OK;
-            // resolve(responsePacket);
+        });
+    }
+    /***
+     * TODO: Temporary hardcoded parts for temporary functionality. Very messy, mostly copied from the Python hub. This will be replaced with the translations.
+     * I'll try to comment this quite rigorously as this is quite a mess.
+     * @param queryStrMap
+     * @param url
+     * @param endpoint
+     * @param responsePacket
+     * @param serialPacket
+     * @param requestType
+     */
+    temporaryTranslation(queryStrMap, url, endpoint, responsePacket, serialPacket, requestType) {
+        return new Promise((resolve, reject) => {
+            let headers = {
+                "school-id": this.hub_variables["credentials"]["school_id"],
+                "pi-id": this.hub_variables["credentials"]["pi_id"],
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            };
+            // handles all services currently supported by the translations file
+            switch (queryStrMap["service"]) {
+                case "share": // SHARE PACKAGE
+                    if (queryStrMap["endpoint"] == "fetchData") {
+                        try {
+                            url = url + queryStrMap["unit"]; // append unit to the end of the URL
+                            // request the data
+                            axios_1.default.get(url, { headers: headers })
+                                .then((success) => {
+                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]); // use JSPath to query the response using the translations file
+                                responsePacket.append(data); // append response to the response packet
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                console.log("ERROR" + error);
+                                reject("COULD NOT GET VARIABLE");
+                                return;
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT GET VARIABLE");
+                        }
+                    }
+                    else if (queryStrMap["endpoint"] == "shareData") {
+                        try {
+                            let jsonData = {
+                                "key": serialPacket.get(2),
+                                "value": serialPacket.get(1),
+                                "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL")
+                            };
+                            axios_1.default.post(`${url}${serialPacket.get(2)}`, jsonData, { headers: headers })
+                                .then((success) => {
+                                responsePacket.append("DATA SENT");
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                reject("COULD NOT SHARE DATA");
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT SHARE DATA");
+                        }
+                    }
+                    else if (queryStrMap["endpoint"] == "historicalData") {
+                        try {
+                            let jsonData = {
+                                "namespace": serialPacket.get(3),
+                                "name": serialPacket.get(2),
+                                "type": 0,
+                                "unit": serialPacket.get(4),
+                                "value": Number(serialPacket.get(1))
+                            };
+                            axios_1.default.post(`${url}`, jsonData, { headers: headers })
+                                .then((success) => {
+                                responsePacket.append("DATA SENT");
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                reject("COULD NOT SHARE DATA");
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT SHARE DATA");
+                        }
+                    }
+                    break;
+                case "iot":
+                    let jsonData = {
+                        "value": null
+                    };
+                    if (requestType == "POST") {
+                        try {
+                            url = url.replace("^device^", serialPacket.get(1)); // replace "^device^ with the device from the serialPacket
+                            if (queryStrMap["endpoint"] == "bulbState" || queryStrMap["endpoint"] == "switchState")
+                                jsonData.value = serialPacket.get(2) == 0 ? "off" : "on"; // set value to on/off from 0/1
+                            else
+                                jsonData.value = String(serialPacket.get(2)); // set value to the value in the serialPacket
+                            // post the jsonData
+                            axios_1.default.post(url, jsonData, { headers: headers })
+                                .then((success) => {
+                                responsePacket.append(jsonData.value);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                console.log(error.response);
+                                if (error.response.status == 404) {
+                                    reject("DEVICE NOT FOUND");
+                                }
+                                else {
+                                    reject("COULD NOT REACH DEVICE");
+                                }
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT REACH DEVICE");
+                        }
+                    }
+                    else if (requestType == "GET") {
+                        try {
+                            url = url.replace("^device^", queryStrMap["device"]);
+                            console.log(url);
+                            console.log(queryStrMap);
+                            axios_1.default.get(`${url}`, { headers: headers })
+                                .then((success) => {
+                                console.log(success);
+                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
+                                responsePacket.append(data);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                console.log("ERROR" + error);
+                                reject("COULD NOT GET VARIABLE");
+                                return;
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT REACH DEVICE");
+                        }
+                    }
+                    break;
+                case "energy":
+                    try {
+                        let fromDate = new Date();
+                        let toDate = new Date();
+                        if (queryStrMap["endpoint"] == "energyLevel") {
+                            if (queryStrMap["unit"] == 0)
+                                url += "energy_type=ELECTRICITY";
+                            else if (queryStrMap["unit"] == 1)
+                                url += "energy_type=GAS";
+                            else if (queryStrMap["unit"] == 2)
+                                url += "energy_type=SOLAR";
+                        }
+                        if (queryStrMap["location"] == "local")
+                            url += "&location_uid=" + this.hub_variables["credentials"]["school_id"];
+                        else
+                            url += "&location_uid=" + queryStrMap["location"];
+                        if (queryStrMap["type"] == "historical") {
+                            switch (queryStrMap["period"]) {
+                                case "hour":
+                                    fromDate.setHours(fromDate.getHours() - queryStrMap["amount"]); // subtract an amount of hours from the current datetime
+                                    break;
+                                case "day":
+                                    fromDate.setDate(fromDate.getDate() - queryStrMap["amount"]); // subtract an amount of days from the current datetime
+                                    break;
+                                case "week":
+                                    fromDate.setDate(fromDate.getDate() - (queryStrMap["amount"] * 7)); // subtract an amount of weeks (weeks * 7 days) from the current datetime
+                                    break;
+                                case "month":
+                                    fromDate.setMonth(fromDate.getMonth() - queryStrMap["amount"]); // subtract an amount of months from the current datetime
+                                    break;
+                            }
+                            url += `&from=${date_time_1.default({ date: fromDate })}&to=${date_time_1.default({ date: toDate })}`; // append "&from={fromTime}&to={to}" to the URL
+                        }
+                        axios_1.default.get(encodeURI(url), { headers: headers })
+                            .then((success) => {
+                            console.log(success);
+                            let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
+                            responsePacket.append(data);
+                            resolve(responsePacket);
+                        })
+                            .catch((error) => {
+                            console.log("ERROR" + error);
+                            reject("COULD NOT GET ENERGY USAGE");
+                            return;
+                        });
+                    }
+                    catch (e) {
+                        console.log(e);
+                        reject("COULD NOT GET ENERGY USAGE");
+                    }
+                    break;
+                case "energyMeter":
+                    try {
+                        let jsonData = {
+                            "namespace": endpoint["queryObject"]["namespace"],
+                            "name": serialPacket.get(1),
+                            "type": serialPacket.get(3),
+                            "unit": endpoint["queryObject"]["unit"],
+                            "value": Number(serialPacket.get(2))
+                        };
+                        console.log(jsonData);
+                        axios_1.default.post(`${url}`, jsonData, { headers: headers })
+                            .then((success) => {
+                            responsePacket.append("DATA SENT");
+                            resolve(responsePacket);
+                        })
+                            .catch((error) => {
+                            console.log(error);
+                            reject("COULD NOT SHARE DATA");
+                        });
+                    }
+                    catch (e) {
+                        reject("COULD NOT SHARE DATA");
+                    }
+                    break;
+                //case "weather":
+                case "carbon":
+                    if (queryStrMap["endpoint"] == "index") {
+                        try {
+                            axios_1.default.get(`${url}`)
+                                .then((success) => {
+                                console.log(success);
+                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
+                                responsePacket.append(data);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                reject("COULD NOT GET DATA");
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT GET DATA");
+                        }
+                    }
+                    else if (queryStrMap["endpoint"] == "value") {
+                        try {
+                            axios_1.default.get(`${url}`)
+                                .then((success) => {
+                                console.log(success);
+                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
+                                responsePacket.append(data);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                reject("COULD NOT GET DATA");
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT GET DATA");
+                        }
+                    }
+                    else if (queryStrMap["endpoint"] == "genmix") {
+                        try {
+                            axios_1.default.get(`${url}`)
+                                .then((success) => {
+                                console.log(success);
+                                let data = String(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
+                                console.log(data);
+                                responsePacket.append(data);
+                                resolve(responsePacket);
+                            })
+                                .catch((error) => {
+                                reject("COULD NOT GET DATA");
+                            });
+                        }
+                        catch (e) {
+                            reject("COULD NOT GET DATA");
+                        }
+                    }
+                    break;
+                default:
+                    reject(`UNKNOWN SERVICE ${queryStrMap["service"]}`);
+            }
         });
     }
     /***
@@ -432,6 +514,7 @@ class RequestHandler {
     }
     /***
      * Makes a GET request to the given URL and return its JSON response.
+     * TODO: Use these to replace the horrible request code blocks in the messy temporaryTranslation() function
      *
      * @param url URL to make request
      * @param config Config for axios request
@@ -444,6 +527,7 @@ class RequestHandler {
     }
     /***
      * Makes a POST request to the given URL and return its response.
+     * TODO: Use these to replace the horrible request code blocks in the messy temporaryTranslation() function
      *
      * @param url URL to make request
      * @param config Config for axios request

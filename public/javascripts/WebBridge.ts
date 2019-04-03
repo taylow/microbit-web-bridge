@@ -10,7 +10,7 @@ import axios from "axios";
 const DEFAULT_BAUD = 115200;
 const FLASH_PAGE_SIZE = 59;
 const DEFAULT_TRANSLATION_POLLING = 60000;
-const DEFAULT_STATUS = "Connect to a micro:bit and flash the bridging software";
+const DEFAULT_STATUS = "Connect to a micro:bit to start the hub";
 
 const statusText = $('#status');
 const connectButton = $('#connect');
@@ -48,7 +48,8 @@ let hub_variables = {
     "dapjs": {
         "serial_delay": 200,
         "baud_rate": 115200,
-        "flash_timeout": 5000
+        "flash_timeout": 5000,
+        "reset_pause": 1000
     }
 };
 
@@ -88,18 +89,26 @@ getTranslations();
 /***
  * Opens option to choose a webUSB device filtered using micro:bit's vendor ID.
  */
-function selectDevice() {
+function selectDevice(): Promise<string> {
     setStatus("Select a device");
 
-    navigator.usb.requestDevice({
-        filters: [{vendorId: 0xD28}]
-    })
-        .then((device) => {
-            connect(device, hub_variables.dapjs.baud_rate);
+    return new Promise((resolve, reject) => {
+        navigator.usb.requestDevice({
+            filters: [{vendorId: 0xD28}]
         })
-        .catch((error) => {
-            setStatus(error);
-        });
+            .then((device) => {
+                connect(device, hub_variables.dapjs.baud_rate)
+                    .then((success) => {
+                        resolve("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
+                    })
+                    .catch((error) => {
+                        reject("Failed to connect to device");
+                    })
+            })
+            .catch((error) => {
+                reject(DEFAULT_STATUS);
+            });
+    });
 }
 
 /***
@@ -120,7 +129,7 @@ function connect(device, baud: number) {
 
     return target.connect()
         .then(() => {
-            setStatus("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
+            //setStatus("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
             target.setSerialBaudrate(baud); // set the baud rate after connecting
             serialNumber = device.serialNumber; // store serial number for comparison when disconnecting
             return target.getSerialBaudrate();
@@ -129,7 +138,16 @@ function connect(device, baud: number) {
             target.startSerialRead(hub_variables.dapjs.serial_delay);
             console.log(`Listening at ${baud} baud...`);
             targetDevice = target;
-        }).catch(e => console.log(e));
+
+            /*targetDevice.reset();
+            // start a timeout check to see if hub authenticates or not for automatic flashing
+            setTimeout(() => {
+                if(!hub_variables.authenticated) {
+                    flashDevice(targetDevice);
+                }
+            }, hub_variables.dapjs.flash_timeout);*/
+        })
+        .catch(e => console.log(e));
 }
 
 /***
@@ -178,9 +196,17 @@ function flashDevice(targetDevice: DAPLink) {
     console.log("Downloading hub hex file");
 
     downloadHex().then((success) => {
-        console.log(success);
+        console.log(success["data"]);
         let program = new Uint8Array(success["data"]).buffer;
-        //targetDevice.flash(program);
+        console.log(program);
+
+        /*targetDevice.flash(program)
+            .then((success) => {
+                console.log(success);
+            })
+            .catch((error) => {
+                console.log(error);
+            });*/
     });
 }
 
@@ -218,8 +244,14 @@ navigator.usb.addEventListener('disconnect', (device) => {
  */
 connectButton.on('click', () => {
     if (connectButton.text() == "Connect") {
-        connectButton.text("Disconnect");
-        selectDevice();
+        selectDevice()
+            .then((success) => {
+                connectButton.text("Disconnect");
+                setStatus(success);
+            })
+            .catch((error) => {
+                setStatus(error);
+            });
     } else {
         disconnect();
     }

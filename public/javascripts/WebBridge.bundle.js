@@ -35074,11 +35074,7 @@ function debug(message, type) {
 }
 exports.debug = debug;
 
-<<<<<<< HEAD
-},{"./constants/Config":59,"jquery":43}],53:[function(require,module,exports){
-=======
-},{"./constants/Config":58,"jquery":42}],51:[function(require,module,exports){
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
+},{"./constants/Config":60,"jquery":43}],53:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35218,7 +35214,7 @@ class RequestHandler {
     }
     /***
      * TODO: Temporary hardcoded parts for temporary functionality. Very messy, mostly copied from the Python hub. This will be replaced with the translations.
-     *
+     * I'll try to comment this quite rigorously as this is quite a mess.
      * @param queryStrMap
      * @param url
      * @param endpoint
@@ -35234,16 +35230,17 @@ class RequestHandler {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             };
+            // handles all services currently supported by the translations file
             switch (queryStrMap["service"]) {
-                case "share":
+                case "share": // SHARE PACKAGE
                     if (queryStrMap["endpoint"] == "fetchData") {
                         try {
-                            axios_1.default.get(`${url}${queryStrMap["unit"]}`, { headers: headers })
+                            url = url + queryStrMap["unit"]; // append unit to the end of the URL
+                            // request the data
+                            axios_1.default.get(url, { headers: headers })
                                 .then((success) => {
-                                console.log(success);
-                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                                responsePacket.append(data);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]); // use JSPath to query the response using the translations file
+                                responsePacket.append(data); // append response to the response packet
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35266,7 +35263,6 @@ class RequestHandler {
                             axios_1.default.post(`${url}${serialPacket.get(2)}`, jsonData, { headers: headers })
                                 .then((success) => {
                                 responsePacket.append("DATA SENT");
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35289,7 +35285,6 @@ class RequestHandler {
                             axios_1.default.post(`${url}`, jsonData, { headers: headers })
                                 .then((success) => {
                                 responsePacket.append("DATA SENT");
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35307,15 +35302,15 @@ class RequestHandler {
                     };
                     if (requestType == "POST") {
                         try {
-                            url = url.replace("^device^", serialPacket.get(1));
+                            url = url.replace("^device^", serialPacket.get(1)); // replace "^device^ with the device from the serialPacket
                             if (queryStrMap["endpoint"] == "bulbState" || queryStrMap["endpoint"] == "switchState")
-                                jsonData.value = serialPacket.get(2) == 0 ? "off" : "on";
+                                jsonData.value = serialPacket.get(2) == 0 ? "off" : "on"; // set value to on/off from 0/1
                             else
-                                jsonData.value = String(serialPacket.get(2));
-                            axios_1.default.post(`${url}`, jsonData, { headers: headers })
+                                jsonData.value = String(serialPacket.get(2)); // set value to the value in the serialPacket
+                            // post the jsonData
+                            axios_1.default.post(url, jsonData, { headers: headers })
                                 .then((success) => {
                                 responsePacket.append(jsonData.value);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35342,7 +35337,6 @@ class RequestHandler {
                                 console.log(success);
                                 let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
                                 responsePacket.append(data);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35375,28 +35369,25 @@ class RequestHandler {
                         if (queryStrMap["type"] == "historical") {
                             switch (queryStrMap["period"]) {
                                 case "hour":
-                                    fromDate.setHours(fromDate.getHours() - queryStrMap["amount"]);
+                                    fromDate.setHours(fromDate.getHours() - queryStrMap["amount"]); // subtract an amount of hours from the current datetime
                                     break;
                                 case "day":
-                                    fromDate.setDate(fromDate.getDate() - queryStrMap["amount"]);
+                                    fromDate.setDate(fromDate.getDate() - queryStrMap["amount"]); // subtract an amount of days from the current datetime
                                     break;
                                 case "week":
-                                    fromDate.setDate(fromDate.getDate() - (queryStrMap["amount"] * 7));
+                                    fromDate.setDate(fromDate.getDate() - (queryStrMap["amount"] * 7)); // subtract an amount of weeks (weeks * 7 days) from the current datetime
                                     break;
                                 case "month":
-                                    fromDate.setMonth(fromDate.getMonth() - queryStrMap["amount"]);
+                                    fromDate.setMonth(fromDate.getMonth() - queryStrMap["amount"]); // subtract an amount of months from the current datetime
                                     break;
                             }
-                            url += `&from=${date_time_1.default({ date: fromDate })}&to=${date_time_1.default({ date: toDate })}`;
+                            url += `&from=${date_time_1.default({ date: fromDate })}&to=${date_time_1.default({ date: toDate })}`; // append "&from={fromTime}&to={to}" to the URL
                         }
-                        console.log(encodeURI(url));
-                        axios_1.default.get(`${encodeURI(url)}`, { headers: headers })
+                        axios_1.default.get(encodeURI(url), { headers: headers })
                             .then((success) => {
                             console.log(success);
                             let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                            console.log("DATA: " + data);
                             responsePacket.append(data);
-                            responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                             resolve(responsePacket);
                         })
                             .catch((error) => {
@@ -35423,7 +35414,6 @@ class RequestHandler {
                         axios_1.default.post(`${url}`, jsonData, { headers: headers })
                             .then((success) => {
                             responsePacket.append("DATA SENT");
-                            responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                             resolve(responsePacket);
                         })
                             .catch((error) => {
@@ -35444,7 +35434,6 @@ class RequestHandler {
                                 console.log(success);
                                 let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
                                 responsePacket.append(data);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35462,7 +35451,6 @@ class RequestHandler {
                                 console.log(success);
                                 let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
                                 responsePacket.append(data);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35481,7 +35469,6 @@ class RequestHandler {
                                 let data = String(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
                                 console.log(data);
                                 responsePacket.append(data);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35604,6 +35591,7 @@ class RequestHandler {
     }
     /***
      * Makes a GET request to the given URL and return its JSON response.
+     * TODO: Use these to replace the horrible request code blocks in the messy temporaryTranslation() function
      *
      * @param url URL to make request
      * @param config Config for axios request
@@ -35616,6 +35604,7 @@ class RequestHandler {
     }
     /***
      * Makes a POST request to the given URL and return its response.
+     * TODO: Use these to replace the horrible request code blocks in the messy temporaryTranslation() function
      *
      * @param url URL to make request
      * @param config Config for axios request
@@ -35765,7 +35754,7 @@ class SerialHandler {
 }
 exports.SerialHandler = SerialHandler;
 
-},{"./Debug":52,"./RequestHandler":53,"./SerialPacket":55,"./constants/Config":59,"async-mutex/lib/Mutex":1,"dapjs":30}],55:[function(require,module,exports){
+},{"./Debug":52,"./RequestHandler":53,"./SerialPacket":55,"./constants/Config":60,"async-mutex/lib/Mutex":1,"dapjs":30}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Debug_1 = require("./Debug");
@@ -36188,18 +36177,15 @@ function connect(device, baud) {
         target.startSerialRead(hub_variables.dapjs.serial_delay);
         console.log(`Listening at ${baud} baud...`);
         targetDevice = target;
-<<<<<<< HEAD
-        targetDevice.reset();
+        /*targetDevice.reset();
         // start a timeout check to see if hub authenticates or not for automatic flashing
         setTimeout(() => {
-            if (!hub_variables.authenticated) {
+            if(!hub_variables.authenticated) {
                 flashDevice(targetDevice);
             }
-        }, hub_variables.dapjs.flash_timeout);
-    });
-=======
-    }).catch(e => console.log(e));
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
+        }, hub_variables.dapjs.flash_timeout);*/
+    })
+        .catch(e => console.log(e));
 }
 /***
  * Disconnects the micro:bit, and resets the front end and hub variables.
@@ -36323,9 +36309,6 @@ flashButton.on('click', () => {
         });
     });
     // TODO: Currently using this section for testing, this is where the flashing code will go
-<<<<<<< HEAD
-    //flashDevice(targetDevice);
-=======
     // targetDevice.flash(hexFile);
     /*let serialPacket = new SerialPacket(1, 139, 207, 2);
     let responsePacket = new SerialPacket(1, 139, 207, 2);
@@ -36354,7 +36337,6 @@ flashButton.on('click', () => {
             .catch((error) => {
                 console.log("ERROR" + error);
             });*/
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
 });
 /**
  * Logout button click handler
@@ -36404,11 +36386,7 @@ window.onload = () => {
     //$('#main').show();
 };
 
-<<<<<<< HEAD
-},{"./Debug":52,"./SerialHandler":54,"./api/login":58,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":43}],57:[function(require,module,exports){
-=======
-},{"./Debug":50,"./SerialHandler":52,"./api/hubs":56,"./api/login":57,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":42}],55:[function(require,module,exports){
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
+},{"./Debug":52,"./SerialHandler":54,"./api/hubs":58,"./api/login":59,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":43}],57:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36525,11 +36503,16 @@ AbstractApiService.REFRESH_TOKEN_PARAM = 'refresh';
 AbstractApiService.UNAUTHORIZED_CODE = 401; // Default unauthorized code
 AbstractApiService.FETCH_ACCESS_TOKEN_ENDPOINT = '/token/refresh/';
 exports.default = AbstractApiService;
+class AbstractHubAuthApiService {
+    constructor(schoolId, hubId) {
+        axios_1.default.defaults.headers.post['Content-Type'] = 'application/json';
+        axios_1.default.defaults.headers.common['school-id'] = schoolId;
+        axios_1.default.defaults.headers.common['pi-id'] = hubId;
+    }
+}
+exports.AbstractHubAuthApiService = AbstractHubAuthApiService;
 
-<<<<<<< HEAD
-},{"../constants/Config":59,"axios":2,"jwt-decode":48,"lodash":49}],58:[function(require,module,exports){
-=======
-},{"../constants/Config":58,"axios":2,"jwt-decode":47,"lodash":48}],56:[function(require,module,exports){
+},{"../constants/Config":60,"axios":2,"jwt-decode":48,"lodash":49}],58:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36571,8 +36554,7 @@ class HubsAPIService extends core_1.default {
 }
 exports.default = new HubsAPIService();
 
-},{"./core":55,"axios":2}],57:[function(require,module,exports){
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
+},{"./core":57,"axios":2}],59:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36611,11 +36593,7 @@ class AuthAPIService extends core_1.default {
 }
 exports.default = new AuthAPIService();
 
-<<<<<<< HEAD
-},{"../constants/Config":59,"./core":57,"axios":2}],59:[function(require,module,exports){
-=======
-},{"../constants/Config":58,"./core":55,"axios":2}],58:[function(require,module,exports){
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
+},{"../constants/Config":60,"./core":57,"axios":2}],60:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // TODO for local development. Request to stage/prod are restricted by CORS

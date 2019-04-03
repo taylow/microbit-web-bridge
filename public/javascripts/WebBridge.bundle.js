@@ -36118,7 +36118,7 @@ let hub_variables = {
     },
     "translations": {
         //"url": "https://raw.githubusercontent.com/Taylor-Woodcock/microbit-web-bridge/master/translations.json",
-        "url": "/translations",
+        "url": "translations.json",
         "poll_updates": false,
         "poll_time": DEFAULT_TRANSLATION_POLLING,
         "json": {}

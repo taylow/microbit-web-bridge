@@ -69,8 +69,9 @@ async function getTranslations() {
         dataType: 'JSON',
         cache: false,
         timeout: 10000,
-        error: () => {
+        error: (error) => {
             debug(`Error receiving translations`, DebugType.ERROR);
+            console.log(error);
         },
         success: (response) => {
             if (hub_variables["translations"]["json"] == {} || response["version"] != hub_variables["translations"]["json"]["version"]) {

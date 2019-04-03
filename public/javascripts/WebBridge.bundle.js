@@ -35074,11 +35074,7 @@ function debug(message, type) {
 }
 exports.debug = debug;
 
-<<<<<<< HEAD
-},{"./constants/Config":59,"jquery":43}],53:[function(require,module,exports){
-=======
-},{"./constants/Config":58,"jquery":42}],51:[function(require,module,exports){
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
+},{"./constants/Config":61,"jquery":43}],53:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35094,6 +35090,7 @@ const SerialPacket_1 = require("./SerialPacket");
 const Debug_1 = require("./Debug");
 const axios_1 = require("axios");
 const date_time_1 = require("date-time");
+const weather_1 = require("./api/weather");
 class RequestHandler {
     constructor(hub_variables) {
         this.translations = hub_variables["translations"]["json"]; // grab the translations part for easier access
@@ -35165,60 +35162,60 @@ class RequestHandler {
         return out;
     }
     processRESTRequest(serialPacket, responsePacket, translation, requestType) {
-        return new Promise((resolve, reject) => {
-            try {
-                // console.log(translation);
-                // gets the format for the micro:bit query string
-                let mbQueryString = translation[requestType]["microbitQueryString"]; // get microbitQueryString from translation
-                // console.log(mbQueryString);
-                // maps the query string coming from the micro:bit to the translated format
-                let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
-                console.log(queryStrMap);
-                // gets the baseURL for the specified service
-                let baseURL = translation[requestType]["baseURL"];
-                console.log(baseURL);
-                // gets the endpoint json
-                let endpoint = translation[requestType]["endpoint"][queryStrMap["endpoint"]];
-                console.log(endpoint);
-                // gets the queryObject for the specified endpoint
-                let queryObject = endpoint["queryObject"];
-                // if there was no query object, set it to blank
-                if (queryObject == null)
-                    queryObject = [];
-                // console.log(queryObject);
-                // regex for finding url parts (e.g. api_endpoint, etc)
-                let urlPart;
-                let regexp = new RegExp("%([^%]*)%", "g"); //"(?=\\w*%)%*\\w+%*");
-                let newURL = baseURL;
-                // loop through the URL and replace any % surrounded url parts with their queryObject counterparts
-                while ((urlPart = regexp.exec(baseURL)) !== null) {
-                    // grab the default parameter from the URL
-                    let sectionParts = urlPart[1].split("?=");
-                    if (sectionParts[0] in queryObject) {
-                        // if there is a queryObject part, replace it with the value
-                        newURL = newURL.replace(urlPart[0], queryObject[sectionParts[0]]);
-                    }
-                    else if (sectionParts.length > 1) {
-                        // if there is a default, set it to it
-                        newURL = newURL.replace(urlPart[0], sectionParts[1]);
-                    }
-                    else {
-                        // if none of the above, replace with nothing
-                        newURL = newURL.replace(urlPart[0], "");
-                    }
+        try {
+            // console.log(translation);
+            // gets the format for the micro:bit query string
+            let mbQueryString = translation[requestType]["microbitQueryString"]; // get microbitQueryString from translation
+            //console.log(mbQueryString);
+            // maps the query string coming from the micro:bit to the translated format
+            let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
+            console.log(queryStrMap);
+            // gets the baseURL for the specified service
+            let baseURL = translation[requestType]["baseURL"];
+            console.log(baseURL);
+            // gets the endpoint json
+            let endpoint = queryStrMap["endpoint"] ? translation[requestType]["endpoint"][queryStrMap["endpoint"]] : {};
+            console.log(endpoint);
+            // gets the queryObject for the specified endpoint
+            let queryObject = endpoint["queryObject"];
+            // if there was no query object, set it to blank
+            if (queryObject == null)
+                queryObject = [];
+            //console.log(queryObject);
+            // regex for finding url parts (e.g. api_endpoint, etc)
+            let urlPart;
+            let regexp = new RegExp("%([^%]*)%", "g"); //"(?=\\w*%)%*\\w+%*");
+            let newURL = baseURL;
+            // loop through the URL and replace any % surrounded url parts with their queryObject counterparts
+            while ((urlPart = regexp.exec(baseURL)) !== null) {
+                // grab the default parameter from the URL
+                let sectionParts = urlPart[1].split("?=");
+                if (sectionParts[0] in queryObject) {
+                    // if there is a queryObject part, replace it with the value
+                    newURL = newURL.replace(urlPart[0], queryObject[sectionParts[0]]);
                 }
-                Debug_1.debug(`Service: ${queryStrMap["service"].toUpperCase()}`, Debug_1.DebugType.DEBUG);
-                return this.temporaryTranslation(queryStrMap, newURL, endpoint, responsePacket, serialPacket, requestType);
+                else if (sectionParts.length > 1) {
+                    // if there is a default, set it to it
+                    newURL = newURL.replace(urlPart[0], sectionParts[1]);
+                }
+                else {
+                    // if none of the above, replace with nothing
+                    newURL = newURL.replace(urlPart[0], "");
+                }
             }
-            catch (e) {
-                console.log(e);
+            Debug_1.debug(`Service: ${queryStrMap["service"].toUpperCase()}`, Debug_1.DebugType.DEBUG);
+            return this.temporaryTranslation(queryStrMap, newURL, endpoint, responsePacket, serialPacket, requestType);
+        }
+        catch (e) {
+            console.log(e);
+            return new Promise((resolve, reject) => {
                 reject("REST REQUEST ERROR");
-            }
-        });
+            });
+        }
     }
     /***
      * TODO: Temporary hardcoded parts for temporary functionality. Very messy, mostly copied from the Python hub. This will be replaced with the translations.
-     *
+     * I'll try to comment this quite rigorously as this is quite a mess.
      * @param queryStrMap
      * @param url
      * @param endpoint
@@ -35228,22 +35225,25 @@ class RequestHandler {
      */
     temporaryTranslation(queryStrMap, url, endpoint, responsePacket, serialPacket, requestType) {
         return new Promise((resolve, reject) => {
+            const schoolID = this.hub_variables["credentials"]["school_id"];
+            const hubID = this.hub_variables["credentials"]["pi_id"];
             let headers = {
-                "school-id": this.hub_variables["credentials"]["school_id"],
-                "pi-id": this.hub_variables["credentials"]["pi_id"],
+                "school-id": schoolID,
+                "pi-id": hubID,
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             };
+            // handles all services currently supported by the translations file
             switch (queryStrMap["service"]) {
-                case "share":
+                case "share": // SHARE PACKAGE
                     if (queryStrMap["endpoint"] == "fetchData") {
                         try {
-                            axios_1.default.get(`${url}${queryStrMap["unit"]}`, { headers: headers })
+                            url = url + queryStrMap["unit"]; // append unit to the end of the URL
+                            // request the data
+                            axios_1.default.get(url, { headers: headers })
                                 .then((success) => {
-                                console.log(success);
-                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                                responsePacket.append(data);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
+                                let data = String(jspath.apply(endpoint["jspath"], success.data)[0]); // use JSPath to query the response using the translations file
+                                responsePacket.append(data); // append response to the response packet
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35266,7 +35266,6 @@ class RequestHandler {
                             axios_1.default.post(`${url}${serialPacket.get(2)}`, jsonData, { headers: headers })
                                 .then((success) => {
                                 responsePacket.append("DATA SENT");
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35289,7 +35288,6 @@ class RequestHandler {
                             axios_1.default.post(`${url}`, jsonData, { headers: headers })
                                 .then((success) => {
                                 responsePacket.append("DATA SENT");
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35307,15 +35305,15 @@ class RequestHandler {
                     };
                     if (requestType == "POST") {
                         try {
-                            url = url.replace("^device^", serialPacket.get(1));
+                            url = url.replace("^device^", serialPacket.get(1)); // replace "^device^ with the device from the serialPacket
                             if (queryStrMap["endpoint"] == "bulbState" || queryStrMap["endpoint"] == "switchState")
-                                jsonData.value = serialPacket.get(2) == 0 ? "off" : "on";
+                                jsonData.value = serialPacket.get(2) == 0 ? "off" : "on"; // set value to on/off from 0/1
                             else
-                                jsonData.value = String(serialPacket.get(2));
-                            axios_1.default.post(`${url}`, jsonData, { headers: headers })
+                                jsonData.value = String(serialPacket.get(2)); // set value to the value in the serialPacket
+                            // post the jsonData
+                            axios_1.default.post(url, jsonData, { headers: headers })
                                 .then((success) => {
                                 responsePacket.append(jsonData.value);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35342,7 +35340,6 @@ class RequestHandler {
                                 console.log(success);
                                 let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
                                 responsePacket.append(data);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35375,28 +35372,25 @@ class RequestHandler {
                         if (queryStrMap["type"] == "historical") {
                             switch (queryStrMap["period"]) {
                                 case "hour":
-                                    fromDate.setHours(fromDate.getHours() - queryStrMap["amount"]);
+                                    fromDate.setHours(fromDate.getHours() - queryStrMap["amount"]); // subtract an amount of hours from the current datetime
                                     break;
                                 case "day":
-                                    fromDate.setDate(fromDate.getDate() - queryStrMap["amount"]);
+                                    fromDate.setDate(fromDate.getDate() - queryStrMap["amount"]); // subtract an amount of days from the current datetime
                                     break;
                                 case "week":
-                                    fromDate.setDate(fromDate.getDate() - (queryStrMap["amount"] * 7));
+                                    fromDate.setDate(fromDate.getDate() - (queryStrMap["amount"] * 7)); // subtract an amount of weeks (weeks * 7 days) from the current datetime
                                     break;
                                 case "month":
-                                    fromDate.setMonth(fromDate.getMonth() - queryStrMap["amount"]);
+                                    fromDate.setMonth(fromDate.getMonth() - queryStrMap["amount"]); // subtract an amount of months from the current datetime
                                     break;
                             }
-                            url += `&from=${date_time_1.default({ date: fromDate })}&to=${date_time_1.default({ date: toDate })}`;
+                            url += `&from=${date_time_1.default({ date: fromDate })}&to=${date_time_1.default({ date: toDate })}`; // append "&from={fromTime}&to={to}" to the URL
                         }
-                        console.log(encodeURI(url));
-                        axios_1.default.get(`${encodeURI(url)}`, { headers: headers })
+                        axios_1.default.get(encodeURI(url), { headers: headers })
                             .then((success) => {
                             console.log(success);
                             let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-                            console.log("DATA: " + data);
                             responsePacket.append(data);
-                            responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                             resolve(responsePacket);
                         })
                             .catch((error) => {
@@ -35423,7 +35417,6 @@ class RequestHandler {
                         axios_1.default.post(`${url}`, jsonData, { headers: headers })
                             .then((success) => {
                             responsePacket.append("DATA SENT");
-                            responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                             resolve(responsePacket);
                         })
                             .catch((error) => {
@@ -35435,7 +35428,33 @@ class RequestHandler {
                         reject("COULD NOT SHARE DATA");
                     }
                     break;
-                //case "weather":
+                case "weather":
+                    const weatherAPIService = new weather_1.default(schoolID, hubID);
+                    const endpoint = serialPacket.get(0);
+                    const location = serialPacket.get(2);
+                    const isForCity = serialPacket.get(1) === 0;
+                    const queryParams = {
+                        [isForCity ? 'city' : 'postal_code']: location,
+                    };
+                    let request = weatherAPIService.getCurrentWeather;
+                    if (endpoint === '/weather/forecastTomorrow/') {
+                        request = weatherAPIService.getTomorrowWeather;
+                    }
+                    request(queryParams).then((weather) => {
+                        if (endpoint === '/weather/temperature/') {
+                            responsePacket.append(weather.temperature.average.toString());
+                        }
+                        else if (endpoint === '/weather/wind/') {
+                            const degree = weather.wind.degree && this.degToCompass(weather.wind.degree);
+                            responsePacket.append(degree);
+                        }
+                        else if (endpoint === '/weather/forecastNow/' || endpoint === '/weather/forecastTomorrow/') {
+                            responsePacket.append(weather.detailed_status);
+                        }
+                        resolve(responsePacket);
+                    }).catch(() => {
+                        reject("NOT AVAILABLE");
+                    });
                 case "carbon":
                     if (queryStrMap["endpoint"] == "index") {
                         try {
@@ -35444,7 +35463,6 @@ class RequestHandler {
                                 console.log(success);
                                 let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
                                 responsePacket.append(data);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35462,7 +35480,6 @@ class RequestHandler {
                                 console.log(success);
                                 let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
                                 responsePacket.append(data);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35481,7 +35498,6 @@ class RequestHandler {
                                 let data = String(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
                                 console.log(data);
                                 responsePacket.append(data);
-                                responsePacket.setRequestBit(SerialPacket_1.RequestStatus.REQUEST_STATUS_OK);
                                 resolve(responsePacket);
                             })
                                 .catch((error) => {
@@ -35604,6 +35620,7 @@ class RequestHandler {
     }
     /***
      * Makes a GET request to the given URL and return its JSON response.
+     * TODO: Use these to replace the horrible request code blocks in the messy temporaryTranslation() function
      *
      * @param url URL to make request
      * @param config Config for axios request
@@ -35616,6 +35633,7 @@ class RequestHandler {
     }
     /***
      * Makes a POST request to the given URL and return its response.
+     * TODO: Use these to replace the horrible request code blocks in the messy temporaryTranslation() function
      *
      * @param url URL to make request
      * @param config Config for axios request
@@ -35625,10 +35643,15 @@ class RequestHandler {
             reject(``);
         });
     }
+    degToCompass(num) {
+        const val = Math.floor((num / 22.5) + 0.5);
+        const arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+        return arr[(val % 16)];
+    }
 }
 exports.RequestHandler = RequestHandler;
 
-},{"./Debug":52,"./SerialPacket":55,"axios":2,"date-time":39,"jspath":44}],54:[function(require,module,exports){
+},{"./Debug":52,"./SerialPacket":55,"./api/weather":60,"axios":2,"date-time":39,"jspath":44}],54:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35765,7 +35788,7 @@ class SerialHandler {
 }
 exports.SerialHandler = SerialHandler;
 
-},{"./Debug":52,"./RequestHandler":53,"./SerialPacket":55,"./constants/Config":59,"async-mutex/lib/Mutex":1,"dapjs":30}],55:[function(require,module,exports){
+},{"./Debug":52,"./RequestHandler":53,"./SerialPacket":55,"./constants/Config":61,"async-mutex/lib/Mutex":1,"dapjs":30}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Debug_1 = require("./Debug");
@@ -36126,8 +36149,9 @@ function getTranslations() {
             dataType: 'JSON',
             cache: false,
             timeout: 10000,
-            error: () => {
+            error: (error) => {
                 Debug_1.debug(`Error receiving translations`, Debug_1.DebugType.ERROR);
+                console.log(error);
             },
             success: (response) => {
                 if (hub_variables["translations"]["json"] == {} || response["version"] != hub_variables["translations"]["json"]["version"]) {
@@ -36188,18 +36212,15 @@ function connect(device, baud) {
         target.startSerialRead(hub_variables.dapjs.serial_delay);
         console.log(`Listening at ${baud} baud...`);
         targetDevice = target;
-<<<<<<< HEAD
-        targetDevice.reset();
+        /*targetDevice.reset();
         // start a timeout check to see if hub authenticates or not for automatic flashing
         setTimeout(() => {
-            if (!hub_variables.authenticated) {
+            if(!hub_variables.authenticated) {
                 flashDevice(targetDevice);
             }
-        }, hub_variables.dapjs.flash_timeout);
-    });
-=======
-    }).catch(e => console.log(e));
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
+        }, hub_variables.dapjs.flash_timeout);*/
+    })
+        .catch(e => console.log(e));
 }
 /***
  * Disconnects the micro:bit, and resets the front end and hub variables.
@@ -36323,9 +36344,6 @@ flashButton.on('click', () => {
         });
     });
     // TODO: Currently using this section for testing, this is where the flashing code will go
-<<<<<<< HEAD
-    //flashDevice(targetDevice);
-=======
     // targetDevice.flash(hexFile);
     /*let serialPacket = new SerialPacket(1, 139, 207, 2);
     let responsePacket = new SerialPacket(1, 139, 207, 2);
@@ -36354,7 +36372,6 @@ flashButton.on('click', () => {
             .catch((error) => {
                 console.log("ERROR" + error);
             });*/
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
 });
 /**
  * Logout button click handler
@@ -36404,11 +36421,7 @@ window.onload = () => {
     //$('#main').show();
 };
 
-<<<<<<< HEAD
-},{"./Debug":52,"./SerialHandler":54,"./api/login":58,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":43}],57:[function(require,module,exports){
-=======
-},{"./Debug":50,"./SerialHandler":52,"./api/hubs":56,"./api/login":57,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":42}],55:[function(require,module,exports){
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
+},{"./Debug":52,"./SerialHandler":54,"./api/hubs":58,"./api/login":59,"axios":2,"dapjs/lib/daplink":33,"dapjs/lib/transport/webusb":38,"jquery":43}],57:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36524,12 +36537,17 @@ AbstractApiService.ACCESS_TOKEN_PARAM = 'access';
 AbstractApiService.REFRESH_TOKEN_PARAM = 'refresh';
 AbstractApiService.UNAUTHORIZED_CODE = 401; // Default unauthorized code
 AbstractApiService.FETCH_ACCESS_TOKEN_ENDPOINT = '/token/refresh/';
-exports.default = AbstractApiService;
+exports.AbstractApiService = AbstractApiService;
+class AbstractHubAuthApiService {
+    constructor(schoolId, hubId) {
+        axios_1.default.defaults.headers.post['Content-Type'] = 'application/json';
+        axios_1.default.defaults.headers.common['school-id'] = schoolId;
+        axios_1.default.defaults.headers.common['pi-id'] = hubId;
+    }
+}
+exports.AbstractHubAuthApiService = AbstractHubAuthApiService;
 
-<<<<<<< HEAD
-},{"../constants/Config":59,"axios":2,"jwt-decode":48,"lodash":49}],58:[function(require,module,exports){
-=======
-},{"../constants/Config":58,"axios":2,"jwt-decode":47,"lodash":48}],56:[function(require,module,exports){
+},{"../constants/Config":61,"axios":2,"jwt-decode":48,"lodash":49}],58:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36542,7 +36560,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = require("axios");
 const core_1 = require("./core");
-class HubsAPIService extends core_1.default {
+class HubsAPIService extends core_1.AbstractApiService {
     getWebHubs() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -36571,8 +36589,7 @@ class HubsAPIService extends core_1.default {
 }
 exports.default = new HubsAPIService();
 
-},{"./core":55,"axios":2}],57:[function(require,module,exports){
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
+},{"./core":57,"axios":2}],59:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36586,7 +36603,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = require("axios");
 const core_1 = require("./core");
 const Config_1 = require("../constants/Config");
-class AuthAPIService extends core_1.default {
+class AuthAPIService extends core_1.AbstractApiService {
     login(username, password) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -36595,8 +36612,8 @@ class AuthAPIService extends core_1.default {
                     password
                 });
                 console.log(response);
-                localStorage.setItem(core_1.default.ACCESS_TOKEN_PARAM, response.data.access);
-                localStorage.setItem(core_1.default.REFRESH_TOKEN_PARAM, response.data.refresh);
+                localStorage.setItem(core_1.AbstractApiService.ACCESS_TOKEN_PARAM, response.data.access);
+                localStorage.setItem(core_1.AbstractApiService.REFRESH_TOKEN_PARAM, response.data.refresh);
             }
             catch (error) {
                 throw new Error(JSON.stringify(error.response.data));
@@ -36611,11 +36628,46 @@ class AuthAPIService extends core_1.default {
 }
 exports.default = new AuthAPIService();
 
-<<<<<<< HEAD
-},{"../constants/Config":59,"./core":57,"axios":2}],59:[function(require,module,exports){
-=======
-},{"../constants/Config":58,"./core":55,"axios":2}],58:[function(require,module,exports){
->>>>>>> c49b16ddcb5ea7483270a7af1d061bb3ed4c8640
+},{"../constants/Config":61,"./core":57,"axios":2}],60:[function(require,module,exports){
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const axios_1 = require("axios");
+const core_1 = require("./core");
+class WeatherHubAPIService extends core_1.AbstractHubAuthApiService {
+    getCurrentWeather(queryParams) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const response = yield axios_1.default.get('/micro-bit/weather/current/', { params: queryParams });
+                return response.data;
+            }
+            catch (error) {
+                throw new Error(JSON.stringify(error.response.data));
+            }
+        });
+    }
+    getTomorrowWeather(queryParams) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const response = yield axios_1.default.get('/micro-bit/weather/forecast/tomorrow/', { params: queryParams });
+                return response.data;
+            }
+            catch (error) {
+                throw new Error(JSON.stringify(error.response.data));
+            }
+        });
+    }
+}
+exports.default = WeatherHubAPIService;
+
+},{"./core":57,"axios":2}],61:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // TODO for local development. Request to stage/prod are restricted by CORS

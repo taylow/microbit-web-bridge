@@ -3,6 +3,7 @@ import {RequestStatus, RequestType, SerialPacket} from "./SerialPacket";
 import {debug, DebugType} from "./Debug";
 import axios, {AxiosRequestConfig} from "axios";
 import dateTime from "date-time";
+import WeatherHubAPIService from "./api/weather";
 
 export class RequestHandler {
     private readonly translations;
@@ -86,63 +87,63 @@ export class RequestHandler {
     }
 
     private processRESTRequest(serialPacket: SerialPacket, responsePacket: SerialPacket, translation: any[], requestType: string): Promise<SerialPacket> {
-        return new Promise((resolve, reject) => {
-            try {
-                // console.log(translation);
+        try {
+            // console.log(translation);
 
-                // gets the format for the micro:bit query string
-                let mbQueryString = translation[requestType]["microbitQueryString"]; // get microbitQueryString from translation
-                // console.log(mbQueryString);
+            // gets the format for the micro:bit query string
+            let mbQueryString = translation[requestType]["microbitQueryString"]; // get microbitQueryString from translation
+            //console.log(mbQueryString);
 
-                // maps the query string coming from the micro:bit to the translated format
-                let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
-                console.log(queryStrMap);
+            // maps the query string coming from the micro:bit to the translated format
+            let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
+            console.log(queryStrMap);
 
-                // gets the baseURL for the specified service
-                let baseURL = translation[requestType]["baseURL"];
-                console.log(baseURL);
+            // gets the baseURL for the specified service
+            let baseURL = translation[requestType]["baseURL"];
+            console.log(baseURL);
 
-                // gets the endpoint json
-                let endpoint = translation[requestType]["endpoint"][queryStrMap["endpoint"]];
-                console.log(endpoint);
+            // gets the endpoint json
+            let endpoint = queryStrMap["endpoint"] ? translation[requestType]["endpoint"][queryStrMap["endpoint"]] : {};
+            console.log(endpoint);
 
-                // gets the queryObject for the specified endpoint
-                let queryObject = endpoint["queryObject"];
-                // if there was no query object, set it to blank
-                if (queryObject == null) queryObject = [];
-                // console.log(queryObject);
+            // gets the queryObject for the specified endpoint
+            let queryObject = endpoint["queryObject"];
+            // if there was no query object, set it to blank
+            if (queryObject == null) queryObject = [];
+            //console.log(queryObject);
 
-                // regex for finding url parts (e.g. api_endpoint, etc)
-                let urlPart;
-                let regexp = new RegExp("%([^%]*)%", "g");//"(?=\\w*%)%*\\w+%*");
-                let newURL = baseURL;
+            // regex for finding url parts (e.g. api_endpoint, etc)
+            let urlPart;
+            let regexp = new RegExp("%([^%]*)%", "g");//"(?=\\w*%)%*\\w+%*");
+            let newURL = baseURL;
 
-                // loop through the URL and replace any % surrounded url parts with their queryObject counterparts
-                while ((urlPart = regexp.exec(baseURL)) !== null) {
-                    // grab the default parameter from the URL
-                    let sectionParts = urlPart[1].split("?=");
+            // loop through the URL and replace any % surrounded url parts with their queryObject counterparts
+            while ((urlPart = regexp.exec(baseURL)) !== null) {
+                // grab the default parameter from the URL
+                let sectionParts = urlPart[1].split("?=");
 
-                    if (sectionParts[0] in queryObject) {
-                        // if there is a queryObject part, replace it with the value
-                        newURL = newURL.replace(urlPart[0], queryObject[sectionParts[0]]);
-                    } else if (sectionParts.length > 1) {
-                        // if there is a default, set it to it
-                        newURL = newURL.replace(urlPart[0], sectionParts[1]);
-                    } else {
-                        // if none of the above, replace with nothing
-                        newURL = newURL.replace(urlPart[0], "");
-                    }
+                if (sectionParts[0] in queryObject) {
+                    // if there is a queryObject part, replace it with the value
+                    newURL = newURL.replace(urlPart[0], queryObject[sectionParts[0]]);
+                } else if (sectionParts.length > 1) {
+                    // if there is a default, set it to it
+                    newURL = newURL.replace(urlPart[0], sectionParts[1]);
+                } else {
+                    // if none of the above, replace with nothing
+                    newURL = newURL.replace(urlPart[0], "");
                 }
-
-                debug(`Service: ${queryStrMap["service"].toUpperCase()}`, DebugType.DEBUG);
-
-                return this.temporaryTranslation(queryStrMap, newURL, endpoint, responsePacket, serialPacket, requestType);
-
-            } catch(e) {
-                console.log(e);
-                reject("REST REQUEST ERROR");
             }
-        });
+
+            debug(`Service: ${queryStrMap["service"].toUpperCase()}`, DebugType.DEBUG);
+
+            return this.temporaryTranslation(queryStrMap, newURL, endpoint, responsePacket, serialPacket, requestType);
+
+        } catch(e) {
+            console.log(e);
+            return new Promise((resolve, reject) => {
+                reject("REST REQUEST ERROR");
+            });
+        }
     }
 
     /***
@@ -157,9 +158,11 @@ export class RequestHandler {
      */
     private temporaryTranslation(queryStrMap: any[], url: string, endpoint: any[], responsePacket: SerialPacket, serialPacket: SerialPacket, requestType: string): Promise<SerialPacket> {
         return new Promise((resolve, reject) => {
+            const schoolID = this.hub_variables["credentials"]["school_id"];
+            const hubID = this.hub_variables["credentials"]["pi_id"];
             let headers = {
-                "school-id": this.hub_variables["credentials"]["school_id"],
-                "pi-id": this.hub_variables["credentials"]["pi_id"],
+                "school-id": schoolID,
+                "pi-id": hubID,
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             };
@@ -372,7 +375,32 @@ export class RequestHandler {
                         reject("COULD NOT SHARE DATA");
                     }
                     break;
-                //case "weather":
+                case "weather":
+                    const weatherAPIService = new WeatherHubAPIService(schoolID, hubID);
+                    const endpoint = serialPacket.get(0);
+                    const location = serialPacket.get(2);
+                    const isForCity = serialPacket.get(1) === 0;
+                    const queryParams = {
+                        [isForCity ? 'city': 'postal_code']: location,
+                    };
+                    let request = weatherAPIService.getCurrentWeather;
+                    if (endpoint === '/weather/forecastTomorrow/') {
+                        request = weatherAPIService.getTomorrowWeather;
+                    }
+                    request(queryParams).then((weather) => {
+                        if (endpoint === '/weather/temperature/') {
+                            responsePacket.append(weather.temperature.average.toString());
+                        } else if (endpoint === '/weather/wind/') {
+                            const degree = weather.wind.degree && this.degToCompass(weather.wind.degree);
+                            responsePacket.append(degree)
+                        } else if (endpoint === '/weather/forecastNow/' || endpoint === '/weather/forecastTomorrow/') {
+                            responsePacket.append(weather.detailed_status);
+                        }
+                        resolve(responsePacket);
+                    }).catch(() => {
+                        reject("NOT AVAILABLE")
+                    });
+
                 case "carbon":
                     if (queryStrMap["endpoint"] == "index") {
                         try {
@@ -579,5 +607,11 @@ export class RequestHandler {
         return new Promise((resolve, reject) => {
             reject(``);
         });
+    }
+
+    private degToCompass(num) {
+        const val = Math.floor((num / 22.5) + 0.5);
+        const arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+        return arr[(val % 16)];
     }
 }

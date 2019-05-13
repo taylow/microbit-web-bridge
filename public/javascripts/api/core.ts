@@ -9,6 +9,8 @@ export class AbstractApiService {
 
   static REFRESH_TOKEN_PARAM = 'refresh';
 
+  static EIS_TOKEN_PARAM = 'apiAuth';
+
   static UNAUTHORIZED_CODE = 401; // Default unauthorized code
 
   static FETCH_ACCESS_TOKEN_ENDPOINT = '/token/refresh/';
@@ -111,7 +113,11 @@ export class AbstractApiService {
   }
 
   get AccessToken() {
-    return localStorage.getItem(AbstractApiService.ACCESS_TOKEN_PARAM);
+    try {
+      return JSON.parse(localStorage.getItem(AbstractApiService.EIS_TOKEN_PARAM))[AbstractApiService.ACCESS_TOKEN_PARAM]
+    } catch (e) {
+      return localStorage.getItem(AbstractApiService.ACCESS_TOKEN_PARAM);
+    }
   }
 
   set AccessToken(value) {
@@ -137,6 +143,7 @@ export class AbstractApiService {
   cleanTokens() {
     localStorage.removeItem(AbstractApiService.ACCESS_TOKEN_PARAM);
     localStorage.removeItem(AbstractApiService.REFRESH_TOKEN_PARAM)
+    localStorage.removeItem(AbstractApiService.EIS_TOKEN_PARAM)
   }
 }
 

@@ -46,7 +46,7 @@ let hub_variables = {
     },
     "dapjs": {
         "serial_delay": 200,
-        "baud_rate": 57600,
+        "baud_rate": 115200,
         "flash_timeout": 5000,
         "reset_pause": 1000
     }

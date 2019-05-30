@@ -53,7 +53,7 @@
     "share":{
         "GET" : {
             "apiPrefix":"get",
-            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/%api_endpoint?=variables%/",
+            "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/%api_endpoint?=variables%/",
             "microbitQueryString":"/%endpoint%/%unit?%/%location?%/",
             "compulsoryParameters":[
                 {
@@ -75,7 +75,7 @@
         },
         "POST" : {
             "apiPrefix":"set",
-            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/%api_endpoint?=variables%/",
+            "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/%api_endpoint?=variables%/",
             "microbitQueryString":"/%endpoint%/",
             "endpoint":{
                 "shareData":{
@@ -146,7 +146,7 @@
     "iot":{
         "GET" : {
             "apiPrefix":"get",
-            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/devices/%device%/%api_endpoint%/",
+            "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/devices/%device%/%api_endpoint%/",
             "microbitQueryString":"/%endpoint%/%device?%",
             "compulsoryParameters":[
                 {
@@ -245,7 +245,7 @@
         },
         "POST" : {
             "apiPrefix":"set",
-            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/devices/%device%/%api_endpoint%/",
+            "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/devices/%device%/%api_endpoint%/",
             "microbitQueryString":"/%endpoint%/",
             "endpoint":{
                 "bulbState":{
@@ -364,7 +364,7 @@
     "energy":{
         "GET" : {
             "apiPrefix":"get",
-            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/energy/consumption/?",
+            "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/energy/consumption/?",
             "microbitQueryString":"/%endpoint%/%unit?%/%location?%/%type?%/%period?%/%amount?%",
             "compulsoryParameters":[
                 {
@@ -388,7 +388,7 @@
     "energyMeter":{
         "POST" : {
             "apiPrefix":"send",
-            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/historical-data/",
+            "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/historical-data/",
             "microbitQueryString":"/%endpoint%",
             "queryObject":{
                 "namespace":"energy",
@@ -431,7 +431,7 @@
     "weather":{
         "POST" : {
             "apiPrefix":"get",
-            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/weather/",
+            "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/weather/",
             "microbitQueryString":""
         }
     },

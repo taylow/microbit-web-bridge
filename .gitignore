@@ -3,3 +3,5 @@ public/javascripts/*.map
 public/javascripts/*.js
 public/javascripts/**/*.map
 public/javascripts/**/*.js
+
+node_modules

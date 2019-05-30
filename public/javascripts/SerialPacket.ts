@@ -183,7 +183,17 @@ export class SerialPacket implements Packet {
             offset += item.length;
         });
 
-        return Array.from(finalPacket).concat(SlipChar.SLIP_END); // condense into one non-typed array and append a SLIP_END character
+        // WORKAROUND. TODO. Fill response packet with zeros for preventing data sent message in input package
+
+        let messageArray = Array.from(finalPacket);
+
+        let newLength = 63 - messageArray.length;
+
+        messageArray = messageArray.concat((new Array(newLength)).fill(0)).slice(0, 61); // first 2 bytes are reserved, last byte is for slip_end
+
+        messageArray = messageArray.concat(SlipChar.SLIP_END);
+
+        return messageArray; // condense into one non-typed array and append a SLIP_END character
     }
 
     /***
@@ -230,9 +240,8 @@ export class SerialPacket implements Packet {
         // clear payload and add an error message if necessary
         this.clear();
 
-        // append message if there is one
-        if(errorMessage.length > 0)
-            this.append(errorMessage);
+        // append ok for webhub
+        this.append(0);
 
         return this;
     }

@@ -21,20 +21,20 @@ export class RequestHandler {
      */
     public async handleRequest(serialPacket: SerialPacket): Promise<SerialPacket> {
         // if HELLO packet
-        if (serialPacket.request_type & RequestType.REQUEST_TYPE_HELLO) {
-            return this.handleHelloPacket(serialPacket);
+        if (serialPacket.request_type === RequestType.REQUEST_TYPE_HELLO) {
+            return await this.handleHelloPacket(serialPacket);
 
             // if a REST request
         } else if (serialPacket.getReqRes() & (RequestType.REQUEST_TYPE_GET_REQUEST | RequestType.REQUEST_TYPE_POST_REQUEST)) {
-            return this.handleRESTRequest(serialPacket);
+            return await this.handleRESTRequest(serialPacket);
 
             // if a CLOUD variable
         } else if (serialPacket.getReqRes() & RequestType.REQUEST_TYPE_CLOUD_VARIABLE) {
-            return this.handleCloudVariable(serialPacket);
+            return await this.handleCloudVariable(serialPacket);
 
             // if a BROADCAST request
         } else if (serialPacket.getReqRes() & RequestType.REQUEST_TYPE_BROADCAST) {
-            return this.handleBroadcast(serialPacket);
+            return await this.handleBroadcast(serialPacket);
         }
 
         // if any other request type was found, reject it as unrecognised

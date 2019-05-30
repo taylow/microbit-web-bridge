@@ -1,8 +1,7 @@
 import {DAPLink} from "dapjs";
-import {RequestStatus, RequestType, SerialPacket} from "./SerialPacket";
+import {RequestStatus, RequestType, SerialPacket, SlipChar} from "./SerialPacket";
 import {debug, DebugType} from "./Debug";
 import {RequestHandler} from "./RequestHandler";
-import Mutex from "async-mutex/lib/Mutex";
 import {DEBUG} from "./constants/Config";
 
 export class SerialHandler {
@@ -10,7 +9,6 @@ export class SerialHandler {
     private baud: number;
     private readonly hubVariables: {};
     private packetCount: number;
-    private serialMutex: Mutex;
     private isPaused: boolean;
 
     /***
@@ -25,20 +23,31 @@ export class SerialHandler {
         this.baud = baud;
         this.hubVariables = hubVariables;
         this.packetCount = 0;
-        this.serialMutex = new Mutex();
         this.isPaused = false;
 
         this.setupSerialHandler();
     }
 
+    public async write(serialPacket: SerialPacket) {
+        this.targetDevice.stopSerialRead()
+        this.pause();
+        await this.sendSerialPacket(serialPacket);
+        this.play();
+        this.targetDevice.startSerialRead(this.hubVariables['serial_delay']);
+    }
+    
     /***
      * Adds an event listener to the DAPLink target to listen to serial events and process the data
      */
-    private setupSerialHandler() {
+    private async setupSerialHandler() {
         this.targetDevice.on(DAPLink.EVENT_SERIAL_DATA, data => {
             // if serial handling is paused, dont perform any actions
             if(this.isPaused)
                 return;
+
+            if (data.search(String.fromCharCode(SlipChar.SLIP_END)) === -1 || data.charCodeAt(0) !== 0) {
+                return;
+            }
 
             this.packetCount++;
             debug(`Packet count: ${this.packetCount}`, DebugType.DEBUG);
@@ -65,7 +74,7 @@ export class SerialHandler {
                 requestHandler.handleRequest(serialPacket)
                     .then((responsePacket) => {
                         responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
-                        this.sendSerialPacket(responsePacket); // handle the request and send back the response
+                        this.write(responsePacket);
                     })
                     .catch((reason) => {
                         debug(`${reason}`, DebugType.ERROR);
@@ -73,14 +82,14 @@ export class SerialHandler {
                         // clear all data from input packet and return it as an error packet
                         let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespaceID(), serialPacket.getUID(), serialPacket.getReqRes());
                         responsePacket.clearAndError(reason);
-                        this.sendSerialPacket(responsePacket);
+                        this.write(responsePacket);
                     });
             } catch (e) {
                 console.log(e);
 
                 // clear serial packet and try to send an error response
                 serialPacket.clearAndError("ERROR");
-                this.sendSerialPacket(serialPacket);
+                this.write(serialPacket);
             }
         });
     }
@@ -100,12 +109,7 @@ export class SerialHandler {
         let packet = String.fromCharCode(...serialPacket.getFormattedPacket());
 
         try {
-            // acquire mutex to prevent concurrent serial writes
-            this.serialMutex.acquire()
-                .then((release) => {
-                    this.targetDevice.serialWrite(packet)
-                        .then(() => release()); // release mutex (must be released or will lock all communication)
-                });
+            await this.targetDevice.serialWrite(packet);
         } catch(e) {
             console.log(e);
         }
@@ -117,7 +121,7 @@ export class SerialHandler {
     public sendSadFace() {
         let responsePacket = new SerialPacket(0, 0, 0, RequestType.REQUEST_TYPE_HELLO);
         responsePacket.append(-1);
-        this.sendSerialPacket(responsePacket);
+        this.write(responsePacket);
     }
 
     /***
@@ -126,7 +130,7 @@ export class SerialHandler {
     public sendHappyFace() {
         let responsePacket = new SerialPacket(0, 0, 0, RequestType.REQUEST_TYPE_HELLO);
         responsePacket.append(0);
-        this.sendSerialPacket(responsePacket);
+        this.write(responsePacket);
     }
 
     /***

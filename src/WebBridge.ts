@@ -1,4 +1,4 @@
-import * as $ from "jquery";
+import $ = require('jquery');
 import {DAPLink} from 'dapjs/lib/daplink';
 import {WebUSB} from 'dapjs/lib/transport/webusb';
 import {debug, DebugType} from "./Debug";
@@ -17,6 +17,8 @@ const flashButton = $('#flash');
 const loginButton = $('#loginButton');
 const logoutButton = $('#logout');
 const hubsSelect = $('#hubSelect');
+
+const s = require('../stylesheets/style.css'); //css TODO replace
 
 let targetDevice: DAPLink;
 let serialNumber: string;
@@ -45,7 +47,7 @@ let hub_variables = {
         "proxy_requests": true
     },
     "dapjs": {
-        "serial_delay": 100,
+        "serial_delay": 90,
         "baud_rate": 115200,
         "flash_timeout": 5000,
         "reset_pause": 1000

@@ -1,6 +1,8 @@
 // TODO for local development. Request to stage/prod are restricted by CORS
-// export const API_ENDPOINT = 'http://127.0.0.1:4000/api/v1';
-export const API_ENDPOINT = 'https://staging.energyinschools.co.uk/api/v1';
+// import translations from '../../translations/translations_local.json';
+
+export const API_ENDPOINT = 'http://127.0.0.1:4000/api/v1';
+// export const API_ENDPOINT = 'https://staging.energyinschools.co.uk/api/v1';
 
 /* Token Types */
 export const TOKEN_TYPE = Object.freeze({

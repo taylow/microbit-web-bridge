@@ -19,13 +19,9 @@ By default, this application is hosted on port 3000 at ``http://localhost:8080/`
 
 ### Building
 ```
-npm run build:dev
-```
-
-Upon deploying to production, run this process through uglifyjs to remove comments and minify the bundled output.
-
-```
-npm run build
+npm run build // translation localhost:4000
+npm run build:staging // translations staging
+npm run build:production // translatinos production
 ```
 
 ### Node Modules (DAPjs)

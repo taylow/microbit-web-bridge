@@ -53,11 +53,18 @@ module.exports = (env, argv) => {
         )
     }
   
-    if (argv.mode === 'production') {
+    if (argv.mode === 'production' && argv.eisenv === 'staging') {
         config.plugins.push(
             new CopyPlugin([
                 { from: './images', to: 'images' },
                 { from: './translations/translations_staging.json', to: 'translations.json' }, // XXX TODO Replace for prod in other branch
+              ]),
+        )
+    } else if (argv.mode === 'production' && argv.eisenv === 'production') {
+        config.plugins.push(
+            new CopyPlugin([
+                { from: './images', to: 'images' },
+                { from: './translations/translations_prod.json', to: 'translations.json' }, // XXX TODO Replace for prod in other branch
               ]),
         )
     }

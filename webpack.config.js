@@ -37,7 +37,7 @@ var config = {
           template: './templates/index.pug',
         }),
         new MiniCssExtractPlugin({ 
-          filename: './stylesheets/styles.css' 
+          filename: 'stylesheets/styles.css' 
         }),
     ]
 }
@@ -48,6 +48,7 @@ module.exports = (env, argv) => {
         config.plugins.push(
             new CopyPlugin([
                 { from: './images', to: 'images' },
+                { from: './libs/sidebars.js', to: 'javascripts'},
                 { from: './translations/translations_local.json', to: 'translations.json' },
               ]),
         )
@@ -57,6 +58,7 @@ module.exports = (env, argv) => {
         config.plugins.push(
             new CopyPlugin([
                 { from: './images', to: 'images' },
+                { from: './libs/sidebars.js', to: 'javascripts'},
                 { from: './translations/translations_staging.json', to: 'translations.json' }, // XXX TODO Replace for prod in other branch
               ]),
         )
@@ -64,6 +66,7 @@ module.exports = (env, argv) => {
         config.plugins.push(
             new CopyPlugin([
                 { from: './images', to: 'images' },
+                { from: './libs/sidebars.js', to: 'javascripts'},
                 { from: './translations/translations_prod.json', to: 'translations.json' }, // XXX TODO Replace for prod in other branch
               ]),
         )

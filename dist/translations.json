@@ -157,7 +157,7 @@
             "endpoint":{
                 "sensorState":{
                     "queryObject": {
-                        "api_endpoint": "motion",
+                        "api_endpoint": "motion-sensor",
                         "device": "^device^"
                     },
                     "jspath": ".value",
@@ -170,7 +170,7 @@
                 },
                 "sensorTemp":{
                     "queryObject": {
-                        "api_endpoint": "temperature",
+                        "api_endpoint": "temperature-measurement",
                         "device": "^device^"
                     },
                     "jspath": ".value",
@@ -186,6 +186,7 @@
                         "api_endpoint": "switch",
                         "device": "^device^"
                     },
+                    "jspath": ".value",
                     "returns":[
                         {
                             "type":"string",
@@ -198,6 +199,7 @@
                         "api_endpoint": "switch-level",
                         "device": "^device^"
                     },
+                    "jspath": ".value",
                     "returns":[
                         {
                             "type":"string",
@@ -210,6 +212,7 @@
                         "api_endpoint": "color-temperature",
                         "device": "^device^"
                     },
+                    "jspath": ".value",
                     "returns":[
                         {
                             "type":"string",
@@ -222,6 +225,7 @@
                         "api_endpoint": "color-control",
                         "device": "^device^"
                     },
+                    "jspath": ".value",
                     "returns":[
                         {
                             "type":"string",
@@ -234,6 +238,7 @@
                         "api_endpoint": "switch",
                         "device": "^device^"
                     },
+                    "jspath": ".value",
                     "returns":[
                         {
                             "type":"string",

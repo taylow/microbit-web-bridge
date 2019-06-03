@@ -47,28 +47,28 @@ module.exports = (env, argv) => {
         config.devtool = "inline-source-map";
         config.plugins.push(
             new CopyPlugin([
-                { from: './images', to: 'images' },
-                { from: './libs/sidebars.js', to: 'javascripts'},
-                { from: './translations/translations_local.json', to: 'translations.json' },
-              ]),
+              { from: './images/*.png', to: './' }, // XXX TODO not only png
+              { from: './libs/sidebars.js', to: 'javascripts'},
+              { from: './translations/translations_local.json', to: 'translations.json' },
+            ]),
         )
     }
   
     if (argv.mode === 'production' && argv.eisenv === 'staging') {
         config.plugins.push(
             new CopyPlugin([
-                { from: './images', to: 'images' },
-                { from: './libs/sidebars.js', to: 'javascripts'},
-                { from: './translations/translations_staging.json', to: 'translations.json' }, // XXX TODO Replace for prod in other branch
-              ]),
+              { from: './images/*.png', to: './' }, // XXX TODO not only png
+              { from: './libs/sidebars.js', to: 'javascripts'},
+              { from: './translations/translations_staging.json', to: 'translations.json' }, // XXX TODO Replace for prod in other branch
+            ]),
         )
     } else if (argv.mode === 'production' && argv.eisenv === 'production') {
         config.plugins.push(
             new CopyPlugin([
-                { from: './images', to: 'images' },
+                { from: './images/*.png', to: './' }, // XXX TODO not only png
                 { from: './libs/sidebars.js', to: 'javascripts'},
                 { from: './translations/translations_prod.json', to: 'translations.json' }, // XXX TODO Replace for prod in other branch
-              ]),
+            ]),
         )
     }
   

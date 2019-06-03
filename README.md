@@ -24,6 +24,10 @@ npm run build:staging // translations staging
 npm run build:production // translatinos production
 ```
 
+### Local development
+For local development setup you might be interested in launching chrome without internet security with disabled CORS
+`npm run chrome-without-web-security`
+
 ### Node Modules (DAPjs)
 At the moment, this repo has not been cleaned up and may contain a load of potentially useless (for this project) node modules.
 That being said, this project relies on the [DAPjs](https://github.com/ARMmbed/dapjs) JavaScript interface for the main serial communication between the webapp and the bridging micro:bit.

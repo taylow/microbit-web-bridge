@@ -1,4 +1,4 @@
-import {DAPLink} from "dapjs";
+import {DAPLink} from 'dapjs/lib/daplink';
 import {RequestStatus, RequestType, SerialPacket, SlipChar} from "./SerialPacket";
 import {debug, DebugType} from "./Debug";
 import {RequestHandler} from "./RequestHandler";

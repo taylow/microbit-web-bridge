@@ -1,4 +1,4 @@
-import * as $ from "jquery";
+import $ = require('jquery');
 import {DEBUG, TIMESTAMPS} from "./constants/Config";
 
 

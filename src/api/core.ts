@@ -1,5 +1,5 @@
 import * as _ from "lodash";
-import * as jwtdecode from 'jwt-decode';
+import jwtdecode from 'jwt-decode';
 import axios from 'axios';
 import {API_ENDPOINT, RoleNames} from "../constants/Config";
 
@@ -136,7 +136,7 @@ export class AbstractApiService {
     if (!this.AccessToken) {
       throw new Error("No access token")
     }
-    const role: string = jwtdecode(this.AccessToken).role;
+    const role: string = jwtdecode(this.AccessToken)['role'];
     return RoleNames[role.toUpperCase()];
   }
 

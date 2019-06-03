@@ -4,14 +4,15 @@
   "private": true,
   "scripts": {
     "build:staging": "webpack --mode=production --eisenv=staging",
-    "build:prod":  "webpack --mode=production  --eisenv=production",
+    "build:prod": "webpack --mode=production  --eisenv=production",
     "build": "webpack --mode=development",
-    "start": "webpack --mode=development && webpack-dev-server --mode=development --hot --inline",
+    "start": "webpack-dev-server --mode=development --hot --inline",
     "chrome-without-web-security": "google-chrome --disable-web-security --user-data-dir=/tmp/chrome"
   },
   "dependencies": {
     "@ekifvk/jpquery": "github:WinUP/jspath",
     "@types/jquery": "^3.3.29",
+    "@types/jwt-decode": "^2.2.1",
     "axios": "^0.18.0",
     "binary": "^0.3.0",
     "bufferpack": "0.0.6",

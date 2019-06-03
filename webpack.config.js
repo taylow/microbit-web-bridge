@@ -6,7 +6,6 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 var config = {
     mode: 'production',
-    devtool: "inline-source-map",
     entry: './src/WebBridge.ts',
     output: {
       path: path.resolve(__dirname, 'dist'),
@@ -45,6 +44,7 @@ var config = {
 module.exports = (env, argv) => {
 
     if (argv.mode === 'development') {
+        config.devtool = "inline-source-map";
         config.plugins.push(
             new CopyPlugin([
                 { from: './images', to: 'images' },

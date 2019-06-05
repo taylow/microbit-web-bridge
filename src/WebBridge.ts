@@ -47,7 +47,7 @@ let hub_variables = {
         "proxy_requests": true
     },
     "dapjs": {
-        "serial_delay": 100,
+        "serial_delay": 150,
         "baud_rate": 115200,
         "flash_timeout": 5000,
         "reset_pause": 1000

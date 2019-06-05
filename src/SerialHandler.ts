@@ -106,10 +106,11 @@ export class SerialHandler {
                 responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
                 await this.write(responsePacket);
             } catch (e) {
+                console.log(e);
                 debug(`${e}`, DebugType.ERROR);
                 // clear all data from input packet and return it as an error packet
                 let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespaceID(), serialPacket.getUID(), serialPacket.getReqRes());
-                responsePacket.clearAndError(e);
+                responsePacket.clearAndError("ERROR");
                 await this.write(responsePacket);
             } 
         });

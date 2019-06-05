@@ -40,13 +40,44 @@ export class SerialHandler {
      * Adds an event listener to the DAPLink target to listen to serial events and process the data
      */
     private async setupSerialHandler() {
-        this.targetDevice.on(DAPLink.EVENT_SERIAL_DATA, data => {
+        this.targetDevice.on(DAPLink.EVENT_SERIAL_DATA, async (raw_data) => {
             // if serial handling is paused, dont perform any actions
             if(this.isPaused)
                 return;
 
-            if (data.search(String.fromCharCode(SlipChar.SLIP_END)) === -1 || data.charCodeAt(0) !== 0) {
+            if (raw_data.search(String.fromCharCode(SlipChar.SLIP_END)) === -1 || raw_data.charCodeAt(0) !== 0 ) {
                 return;
+            }
+
+            // DEAL with SLIP Chars
+            let data = '';
+
+            for (let i = 0; i < raw_data.length; i++) {
+                let c = raw_data.charCodeAt(i);
+
+                if (c === SlipChar.SLIP_END){
+                    data += String.fromCharCode(c);
+                    break
+                }
+                
+                if (c === SlipChar.SLIP_ESC){
+                    let next = raw_data.charCodeAt(i + 1);
+
+                    if (next === SlipChar.SLIP_ESC_END) {
+                        data += String.fromCharCode(SlipChar.SLIP_END)
+                    } else if (next === SlipChar.SLIP_ESC_ESC) {
+                        data += String.fromCharCode(SlipChar.SLIP_ESC)
+                    } else {
+                        data += String.fromCharCode(c);
+                        data += String.fromCharCode(next);
+                    }
+
+                    i += 1;
+
+                    continue;
+                }
+
+                data += String.fromCharCode(c);
             }
 
             this.packetCount++;
@@ -71,26 +102,16 @@ export class SerialHandler {
                 }
 
                 // handle the request and await the promised resolve packet or reason for error
-                requestHandler.handleRequest(serialPacket)
-                    .then((responsePacket) => {
-                        responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
-                        this.write(responsePacket);
-                    })
-                    .catch((reason) => {
-                        debug(`${reason}`, DebugType.ERROR);
-
-                        // clear all data from input packet and return it as an error packet
-                        let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespaceID(), serialPacket.getUID(), serialPacket.getReqRes());
-                        responsePacket.clearAndError(reason);
-                        this.write(responsePacket);
-                    });
+                let responsePacket = await requestHandler.handleRequest(serialPacket)
+                responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
+                await this.write(responsePacket);
             } catch (e) {
-                console.log(e);
-
-                // clear serial packet and try to send an error response
-                serialPacket.clearAndError("ERROR");
-                this.write(serialPacket);
-            }
+                debug(`${e}`, DebugType.ERROR);
+                // clear all data from input packet and return it as an error packet
+                let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespaceID(), serialPacket.getUID(), serialPacket.getReqRes());
+                responsePacket.clearAndError(e);
+                await this.write(responsePacket);
+            } 
         });
     }
 
@@ -109,7 +130,7 @@ export class SerialHandler {
         let packet = String.fromCharCode(...serialPacket.getFormattedPacket());
 
         try {
-            await this.targetDevice.serialWrite(packet);
+            return await this.targetDevice.serialWrite(packet);
         } catch(e) {
             console.log(e);
         }

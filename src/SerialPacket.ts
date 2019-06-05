@@ -286,7 +286,7 @@ export class SerialPacket implements Packet {
         let offset = 0;
 
         // grab subtype and the remainder of the packet
-        let subtype = unpack("b", rawPayload);
+        let subtype = unpack("b", rawPayload, 0);
         let remainder = rawPayload.slice(1);
 
         // compare against each subtype and process the data accordingly
@@ -327,6 +327,7 @@ export class SerialPacket implements Packet {
 
         // unpack header using header structure
         header = unpack(HEADER_STRUCTURE, bytes.slice(0, HEADER_LENGTH));
+
         payload = bytes.slice(HEADER_LENGTH);
 
         // create packet using the header bytes and the payload data

@@ -7,7 +7,9 @@
     "build:prod": "webpack --mode=production  --eisenv=production",
     "build": "webpack --mode=development",
     "start": "webpack-dev-server --mode=development --hot --inline",
-    "chrome-without-web-security": "google-chrome --disable-web-security --user-data-dir=/tmp/chrome"
+    "chrome-without-web-security": "google-chrome --disable-web-security --user-data-dir=/tmp/chrome",
+    "test": "jest",
+    "testWithCoverage": "jest --coverage"
   },
   "dependencies": {
     "@ekifvk/jpquery": "github:WinUP/jspath",
@@ -44,7 +46,6 @@
     "tslint-eslint-rules": "^5.4.0",
     "typed-web-workers": "^2.1.1",
     "typedoc": "^0.14.2",
-    "typescript": "^3.3.3",
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0",
     "watchify": "^3.11.0",
@@ -53,21 +54,25 @@
     "worker-nodes": "^1.6.1"
   },
   "devDependencies": {
+    "@types/jest": "^24.0.13",
     "@types/lodash": "^4.14.123",
     "@types/w3c-web-usb": "^1.0.3",
     "commonjs": "0.0.1",
     "copy-webpack-plugin": "^5.0.3",
     "css-loader": "^2.1.1",
     "html-webpack-plugin": "^3.2.0",
+    "jest": "^24.8.0",
     "json-loader": "^0.5.7",
     "mini-css-extract-plugin": "^0.7.0",
     "pug": "^2.0.0-beta11",
     "pug-loader": "^2.4.0",
     "style-loader": "^0.23.1",
+    "ts-jest": "^24.0.2",
     "ts-loader": "^6.0.2",
+    "typescript": "^3.5.1",
     "url-loader": "^1.1.2",
-    "webpack-cli": "^3.3.2",
     "webpack": "^4.0.0",
+    "webpack-cli": "^3.3.2",
     "webpack-dev-server": "^3.3.1",
     "webpack-livereload-plugin": "^0.11.0"
   }

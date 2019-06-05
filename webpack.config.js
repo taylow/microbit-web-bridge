@@ -18,7 +18,7 @@ var config = {
     module: {
         rules: [
           // all files with a `.ts` or `.tsx` extension will be handled by `ts-loader`
-          { test: /\.tsx?$/, use: "ts-loader", exclude: /node_modules/ },
+          { test: /\.tsx?$/, use: "ts-loader", exclude: ['/node_modules/', '/tests']},
           { test: /\.css$/, use: [MiniCssExtractPlugin.loader, 'css-loader'] },
           { test: /\.pug$/, loader: 'pug-loader' },
           { test: /\.(png|jpg)$/, loader: 'url-loader'},

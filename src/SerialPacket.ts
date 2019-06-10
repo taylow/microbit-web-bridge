@@ -1,6 +1,6 @@
 import {Packet} from "./Packet";
-import {debug, DebugType} from "./Debug";
 import {unpack, pack} from 'bufferpack';
+import logger from "../libs/logger";
 
 export enum SubType {
     SUBTYPE_STRING = 0x01,
@@ -150,7 +150,7 @@ export class SerialPacket implements Packet {
 
                 default:
                     //TODO: Implement Events
-                    debug(`FOUND UNIMPLEMENTED SUBTYPE WHILE ENCODING PACKET ${typeof value} (${value})`, DebugType.WARNING);
+                    logger.warn(`FOUND UNIMPLEMENTED SUBTYPE WHILE ENCODING PACKET ${typeof value} (${value})`);
             }
         }
         return formattedPayload;

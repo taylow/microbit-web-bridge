@@ -1,7 +1,4 @@
-import {RequestStatus, SerialPacket} from "./SerialPacket";
-import {debug, DebugType} from "./Debug";
-import axios from "axios";
-import * as jspath from "jspath";
+import {SerialPacket} from "./SerialPacket";
 
 let hub_variables = {
     "authenticated": false,
@@ -116,8 +113,6 @@ export function processRESTRequest(serialPacket: SerialPacket, responsePacket: S
                 fullURL = fullURL.replace(urlPart[0], "");
             }
         }
-
-        debug(`Service: ${queryStrMap["service"].toUpperCase()}`, DebugType.DEBUG);
 
         console.log(fullURL);
 

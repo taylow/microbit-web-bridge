@@ -1,8 +1,9 @@
 import {DAPLink} from 'dapjs/lib/daplink';
 import {RequestStatus, RequestType, SerialPacket, SlipChar} from "./SerialPacket";
-import {debug, DebugType} from "./Debug";
 import {RequestHandler} from "./RequestHandler";
 import {DEBUG} from "./constants/Config";
+import {terminalMsg} from "./Debug";
+import logger from "../libs/logger";
 
 export class SerialHandler {
     private targetDevice: DAPLink;
@@ -81,7 +82,8 @@ export class SerialHandler {
             }
 
             this.packetCount++;
-            debug(`Packet count: ${this.packetCount}`, DebugType.DEBUG);
+            terminalMsg(`Packet count: ${this.packetCount}`);
+            logger.debug(`Packet count: ${this.packetCount}`);
 
             let serialPacket: SerialPacket;
 
@@ -90,15 +92,13 @@ export class SerialHandler {
                 serialPacket = SerialPacket.dataToSerialPacket(data); // convert the data to a SerialPacket
 
                 if(DEBUG) {
-                    console.log("Input Packet: ");
+                    logger.debug("Input Packet:", data);
 
                     let rawPacket = [];
                     for (let i = 0; i < data.length; i++) {
                         rawPacket.push(data.charCodeAt(i));
                     }
-                    console.log(data);
-                    console.log(rawPacket);
-                    console.log(serialPacket);
+                    logger.debug("Serial packet:", serialPacket);
                 }
 
                 // handle the request and await the promised resolve packet or reason for error
@@ -106,8 +106,7 @@ export class SerialHandler {
                 responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
                 await this.write(responsePacket);
             } catch (e) {
-                console.log(e);
-                debug(`${e}`, DebugType.ERROR);
+                logger.error(e);
                 // clear all data from input packet and return it as an error packet
                 let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespaceID(), serialPacket.getUID(), serialPacket.getReqRes());
                 responsePacket.clearAndError("ERROR");
@@ -123,9 +122,7 @@ export class SerialHandler {
      */
     public async sendSerialPacket(serialPacket: SerialPacket) {
         if(DEBUG) {
-            console.log("Output Packet");
-            console.log(serialPacket);
-            console.log(serialPacket.getFormattedPacket());
+            logger.debug("Output Packet (raw):", serialPacket);
         }
 
         let packet = String.fromCharCode(...serialPacket.getFormattedPacket());
@@ -133,7 +130,7 @@ export class SerialHandler {
         try {
             return await this.targetDevice.serialWrite(packet);
         } catch(e) {
-            console.log(e);
+            logger.error(e);
         }
     }
 

@@ -1,9 +1,9 @@
 import * as jspath from "jspath";
 import {RequestStatus, RequestType, SerialPacket} from "./SerialPacket";
-import {debug, DebugType} from "./Debug";
 import axios, {AxiosRequestConfig} from "axios";
 import dateTime from "date-time";
 import WeatherHubAPIService from "./api/weather";
+import logger from "../libs/logger";
 
 export class RequestHandler {
     private readonly translations;
@@ -88,23 +88,18 @@ export class RequestHandler {
 
     private processRESTRequest(serialPacket: SerialPacket, responsePacket: SerialPacket, translation: any[], requestType: string): Promise<SerialPacket> {
         try {
-            // console.log(translation);
 
             // gets the format for the micro:bit query string
             let mbQueryString = translation[requestType]["microbitQueryString"]; // get microbitQueryString from translation
-            //console.log(mbQueryString);
 
             // maps the query string coming from the micro:bit to the translated format
             let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
-            console.log(queryStrMap);
 
             // gets the baseURL for the specified service
             let baseURL = translation[requestType]["baseURL"];
-            console.log(baseURL);
 
             // gets the endpoint json
             let endpoint = queryStrMap["endpoint"] ? translation[requestType]["endpoint"][queryStrMap["endpoint"]] : {};
-            console.log(endpoint);
 
             // gets the queryObject for the specified endpoint
             let queryObject = endpoint["queryObject"];
@@ -134,12 +129,13 @@ export class RequestHandler {
                 }
             }
 
-            debug(`Service: ${queryStrMap["service"].toUpperCase()}`, DebugType.DEBUG);
+            logger.debug(`Service: ${queryStrMap["service"].toUpperCase()}`);
+            logger.debug('Query string map', queryStrMap);
 
             return this.temporaryTranslation(queryStrMap, newURL, endpoint, responsePacket, serialPacket, requestType);
 
         } catch(e) {
-            console.log(e);
+            logger.error(e);
             return new Promise((resolve, reject) => {
                 reject("REST REQUEST ERROR");
             });
@@ -183,7 +179,7 @@ export class RequestHandler {
                                     resolve(responsePacket);
                                 })
                                 .catch((error) => {
-                                    console.log("ERROR" + error);
+                                    logger.error("ERROR" + error);
                                     reject("COULD NOT GET VARIABLE");
                                     return;
                                 });
@@ -360,15 +356,13 @@ export class RequestHandler {
                             "value": Number(serialPacket.get(2))
                         };
 
-                        console.log(jsonData);
-
                         axios.post(`${url}`, jsonData, {headers: headers})
                             .then((success) => {
                                 responsePacket.append("DATA SENT");
                                 resolve(responsePacket);
                             })
                             .catch((error) => {
-                                console.log(error);
+                                logger.error(error);
                                 reject("COULD NOT SHARE DATA");
                             });
                     } catch (e) {
@@ -406,10 +400,7 @@ export class RequestHandler {
                         try {
                             axios.get(`${url}`)
                                 .then((success) => {
-                                    console.log(success);
-
                                     let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-
                                     responsePacket.append(data);
                                     resolve(responsePacket);
                                 })
@@ -423,10 +414,7 @@ export class RequestHandler {
                         try {
                             axios.get(`${url}`)
                                 .then((success) => {
-                                    console.log(success);
-
                                     let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-
                                     responsePacket.append(data);
                                     resolve(responsePacket);
                                 })
@@ -440,11 +428,7 @@ export class RequestHandler {
                         try {
                             axios.get(`${url}`)
                                 .then((success) => {
-                                    console.log(success);
                                     let data = String(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
-
-                                    console.log(data);
-
                                     responsePacket.append(data);
                                     resolve(responsePacket);
                                 })
@@ -469,7 +453,7 @@ export class RequestHandler {
      * @param serialPacket Incoming serial packet (REST REQUEST)
      */
     private handleRESTRequest(serialPacket: SerialPacket): Promise<SerialPacket> {
-        debug(`REST REQUEST PACKET`, DebugType.DEBUG);
+        logger.debug("Received REST packet")
         try {
             let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespaceID(), serialPacket.getUID());
             let queryPieces = serialPacket.get(0).split('/').filter(x => x);
@@ -506,7 +490,7 @@ export class RequestHandler {
 
             return this.processRESTRequest(serialPacket, responsePacket, translation, requestType);
         } catch(e) {
-            console.log(e);
+            logger.error(e);
             return new Promise((resolve, reject) => {
                 reject("REST PACKET ERROR");
             });
@@ -545,8 +529,8 @@ export class RequestHandler {
      */
     private handleHelloPacket(serialPacket: SerialPacket): Promise<SerialPacket> {
         return new Promise((resolve, reject) => {
-            debug(`HELLO PACKET`, DebugType.DEBUG);
-            debug(`School_ID: ${serialPacket.get(1)} hub_id: ${serialPacket.get(2)}`, DebugType.DEBUG);
+            logger.debug(`Received HELLO PACKET`);
+            logger.debug(`School_ID: ${serialPacket.get(1)} hub_id: ${serialPacket.get(2)}`);
 
             let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespaceID(), serialPacket.getUID());
 

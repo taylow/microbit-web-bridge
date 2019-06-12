@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build:staging": "webpack --mode=production --eisenv=staging",
-    "build:prod": "webpack --mode=production  --eisenv=production",
+    "build:staging": "NODE_ENV=staging webpack --mode=production",
+    "build:prod": "NODE_ENV=production webpack --mode=production",
     "build": "webpack --mode=development",
     "start": "webpack-dev-server --mode=development --hot --inline",
     "chrome-without-web-security": "google-chrome --disable-web-security --user-data-dir=/tmp/chrome",

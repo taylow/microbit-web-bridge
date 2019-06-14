@@ -1,10 +1,11 @@
 import $ = require('jquery');
 import {DAPLink} from 'dapjs/lib/daplink';
 import {WebUSB} from 'dapjs/lib/transport/webusb';
-import {debug, DebugType} from "./Debug";
+import {terminalMsg} from "./Debug";
 import {SerialHandler} from "./SerialHandler";
 import AuthAPIService from "./api/login";
 import HubsAPIService from "./api/hubs";
+import logger from "../libs/logger";
 
 const DEFAULT_BAUD = 115200;
 const FLASH_PAGE_SIZE = 59;
@@ -62,7 +63,8 @@ async function getTranslations() {
     if (!hub_variables["translations"]["poll_updates"] && Object.entries(hub_variables["translations"]["json"]).length !== 0)
         return;
 
-    debug("Checking for translations updates", DebugType.DEBUG);
+    terminalMsg("Checking for translations updates");
+    logger.info("Checking for translations updates");
 
     $.ajax({
         url: hub_variables["translations"]["url"],
@@ -71,12 +73,12 @@ async function getTranslations() {
         cache: false,
         timeout: 10000,
         error: (error) => {
-            debug(`Error receiving translations`, DebugType.ERROR);
-            console.log(error);
+            terminalMsg(`Error receiving translations`);
+            logger.error(error);
         },
         success: (response) => {
             if (hub_variables["translations"]["json"] == {} || response["version"] != hub_variables["translations"]["json"]["version"]) {
-                debug(`Translations have updated! (v${response["version"]})`, DebugType.DEBUG);
+                terminalMsg(`Translations have updated! (v${response["version"]})`);
                 hub_variables["translations"]["json"] = response;
             }
         }
@@ -130,12 +132,12 @@ function disconnect() {
         targetDevice.stopSerialRead();
         targetDevice.disconnect()
             .catch((e) => {
-                console.log(e);
-                console.log(ERROR_MESSAGE);
+                logger.error(e);
+                logger.error(ERROR_MESSAGE);
             });
     } catch (e) {
-        console.log(e);
-        console.log(ERROR_MESSAGE);
+        logger.error(e);
+        logger.error(ERROR_MESSAGE);
     }
 
     targetDevice = null; // destroy DAPLink
@@ -164,12 +166,12 @@ function connect(device: USBDevice): Promise<string> {
             .then(() => targetDevice.getSerialBaudrate())
             .then(baud => {
                 targetDevice.startSerialRead(hub_variables.dapjs.serial_delay);
-                console.log(`Listening at ${baud} baud...`);
+                logger.info(`Listening at ${baud} baud...`);
                 serialHandler = new SerialHandler(targetDevice, hub_variables, baud);
                 resolve("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
             })
             .catch(err => {
-                console.log(err);
+                logger.error(err);
                 reject(`Failed to connect : ${err}`);
             });
     });
@@ -199,17 +201,17 @@ function flashDevice(device: USBDevice): Promise<string> {
             // Push binary to board
             return targetDevice.connect()
                 .then(() => {
-                    console.log("Flashing");
+                    logger.info("Flashing");
                     return targetDevice.flash(firmware);
                 })
                 .then(() => {
-                    console.log("Finished flashing! Reconnect micro:bit");
+                    logger.info("Finished flashing! Reconnect micro:bit");
                     resolve("Finished flashing! Reconnect micro:bit");
                     return targetDevice.disconnect();
                 })
                 .catch((e) => {
                     reject("Error flashing: " + e);
-                    console.log("Error flashing: " + e);
+                    logger.error("Error flashing: " + e);
                 })
         }).catch(() => {
             reject("Failed to get hub firmware")

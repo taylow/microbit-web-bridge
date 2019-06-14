@@ -1,8 +1,33 @@
+const webpack = require('webpack');
 var path = require('path');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 var MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+
+var appConfig;
+const setupConfig = () => {
+  switch (process.env.NODE_ENV) {
+    case 'production':
+      appConfig = {
+        apiHost: "https://energyinschools.co.uk/api/v1",
+        translationsFile: "./translations/translations_prod.json"
+      }
+      break;
+    case "staging":
+      appConfig = {
+        apiHost: "https://staging.energyinschools.co.uk/api/v1",
+        translationsFile: "./translations/translations_staging.json"
+      }
+      break;
+    default:
+      appConfig = {
+        apiHost: "http://127.0.0.1:4000/api/v1",
+        translationsFile: "./translations/translations_local.json"
+      }
+  }
+}
+setupConfig()
 
 var config = {
     mode: 'production',
@@ -38,41 +63,23 @@ var config = {
         new MiniCssExtractPlugin({ 
           filename: 'stylesheets/styles.css' 
         }),
+        new webpack.DefinePlugin({
+          API_ENDPOINT: JSON.stringify(appConfig.apiHost)
+        })
     ]
 }
 
 module.exports = (env, argv) => {
-
-    var basicFilesToCopy = [
-      { from: './images/*.png', to: './' }, // XXX TODO not only png
-      { from: './libs/sidebars.js', to: 'javascripts'},
-    ]
+    config.plugins.push(
+        new CopyPlugin([
+            {from: './images/*.png', to: './'}, // XXX TODO not only png
+            {from: './libs/sidebars.js', to: 'javascripts'},
+            {from: appConfig.translationsFile, to: 'translations.json'},
+        ]),
+    )
 
     if (argv.mode === 'development') {
         config.devtool = "inline-source-map";
-        config.plugins.push(
-            new CopyPlugin([
-              ...basicFilesToCopy,
-              { from: './translations/translations_local.json', to: 'translations.json' },
-            ]),
-        )
     }
-  
-    if (argv.mode === 'production' && argv.eisenv === 'staging') {
-        config.plugins.push(
-            new CopyPlugin([
-              ...basicFilesToCopy,
-              { from: './translations/translations_staging.json', to: 'translations.json' }, // XXX TODO Replace for prod in other branch
-            ]),
-        )
-    } else if (argv.mode === 'production' && argv.eisenv === 'production') {
-        config.plugins.push(
-            new CopyPlugin([
-                ...basicFilesToCopy,
-                { from: './translations/translations_prod.json', to: 'translations.json' }, // XXX TODO Replace for prod in other branch
-            ]),
-        )
-    }
-  
     return config;
-  };
+};

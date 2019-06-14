@@ -165,10 +165,14 @@ export class RequestHandler {
 
             // handles all services currently supported by the translations file
             switch (queryStrMap["service"]) {
-                case "share": // SHARE PACKAGE
-                    if (queryStrMap["endpoint"] == "fetchData") {
+                case "shr": // SHARE PACKAGE
+                    if (queryStrMap["endpoint"] == "fDta") {
                         try {
-                            url = url + queryStrMap["unit"]; // append unit to the end of the URL
+                            url += `${queryStrMap["unit"]}/`; // append unit to the end of the URL
+
+                            if (queryStrMap["location"] !== "local") {
+                                url += `school/${queryStrMap["location"]}/`
+                            }
 
                             // request the data
                             axios.get(url, {headers: headers})
@@ -186,7 +190,7 @@ export class RequestHandler {
                         } catch (e) {
                             reject("COULD NOT GET VARIABLE");
                         }
-                    } else if (queryStrMap["endpoint"] == "shareData") {
+                    } else if (queryStrMap["endpoint"] == "sDta") {
                         try {
                             let jsonData = {
                                 "key": serialPacket.get(2),
@@ -194,7 +198,7 @@ export class RequestHandler {
                                 "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL")
                             };
 
-                            axios.post(`${url}${serialPacket.get(2)}`, jsonData, {headers: headers})
+                            axios.post(`${url}${serialPacket.get(2)}/`, jsonData, {headers: headers})
                                 .then((success) => {
                                     responsePacket.append("DATA SENT");
                                     resolve(responsePacket);
@@ -205,7 +209,7 @@ export class RequestHandler {
                         } catch (e) {
                             reject("COULD NOT SHARE DATA");
                         }
-                    } else if (queryStrMap["endpoint"] == "historicalData") {
+                    } else if (queryStrMap["endpoint"] == "hDta") {
                         try {
                             let jsonData = {
                                 "namespace": serialPacket.get(3),
@@ -238,7 +242,7 @@ export class RequestHandler {
                         try {
                             url = url.replace("^device^", serialPacket.get(1)); // replace "^device^ with the device from the serialPacket
 
-                            if (queryStrMap["endpoint"] == "bulbState" || queryStrMap["endpoint"] == "switchState")
+                            if (queryStrMap["endpoint"] == "bSt" || queryStrMap["endpoint"] == "swSt")
                                 jsonData.value = serialPacket.get(2) == 0 ? "off" : "on"; // set value to on/off from 0/1
                             else
                                 jsonData.value = String(serialPacket.get(2)); // set value to the value in the serialPacket
@@ -286,12 +290,12 @@ export class RequestHandler {
                         }
                     }
                     break;
-                case "energy":
+                case "nrg":
                     try {
                         let fromDate = new Date();
                         let toDate = new Date();
 
-                        if (queryStrMap["endpoint"] == "energyLevel") {
+                        if (queryStrMap["endpoint"] == "nrgLvl") {
                             if (queryStrMap["unit"] == 0)
                                 url += "energy_type=ELECTRICITY";
                             else if (queryStrMap["unit"] == 1)
@@ -346,7 +350,7 @@ export class RequestHandler {
                         reject("COULD NOT GET ENERGY USAGE");
                     }
                     break;
-                case "energyMeter":
+                case "nrgMtr":
                     try {
                         let jsonData = {
                             "namespace": endpoint["queryObject"]["namespace"],
@@ -369,7 +373,7 @@ export class RequestHandler {
                         reject("COULD NOT SHARE DATA");
                     }
                     break;
-                case "weather":
+                case "wthr":
                     const weatherAPIService = new WeatherHubAPIService(schoolID, hubID);
                     const end_point = serialPacket.get(0);
                     const location = serialPacket.get(2);
@@ -378,16 +382,16 @@ export class RequestHandler {
                         [isForCity ? 'city': 'postal_code']: location,
                     };
                     let request = weatherAPIService.getCurrentWeather;
-                    if (end_point === '/weather/forecastTomorrow/') {
+                    if (end_point === '/wthr/tmrw/') {
                         request = weatherAPIService.getTomorrowWeather;
                     }
                     request(queryParams).then((weather) => {
-                        if (end_point === '/weather/temperature/') {
+                        if (end_point === '/wthr/tmpr/') {
                             responsePacket.append(weather.temperature.average.toString());
-                        } else if (end_point === '/weather/wind/') {
+                        } else if (end_point === '/wthr/wnd/') {
                             const degree = weather.wind.degree && this.degToCompass(weather.wind.degree);
                             responsePacket.append(degree)
-                        } else if (end_point === '/weather/forecastNow/' || end_point === '/weather/forecastTomorrow/') {
+                        } else if (end_point === '/wthr/now/' || end_point === '/wthr/tmrw/') {
                             responsePacket.append(weather.detailed_status);
                         }
                         resolve(responsePacket);

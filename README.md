@@ -28,6 +28,17 @@ npm run build:production // translatinos production
 For local development setup you might be interested in launching chrome without internet security with disabled CORS
 `npm run chrome-without-web-security`
 
+### Deploying to S3
+To deploy built version on S3 bucket you need to install [s3deploy](https://github.com/bep/s3deploy) tool.
+After installation use these commands to build and then deploy to S3
+```npm
+npm run deploy:staging
+npm run deploy:prod
+```
+
+Deploy configuration is inside `deployConfig` section of `package.json` file. Also refer to [s3deploy](https://github.com/bep/s3deploy) 
+tool configuration for more details.
+
 ### Node Modules (DAPjs)
 At the moment, this repo has not been cleaned up and may contain a load of potentially useless (for this project) node modules.
 That being said, this project relies on the [DAPjs](https://github.com/ARMmbed/dapjs) JavaScript interface for the main serial communication between the webapp and the bridging micro:bit.

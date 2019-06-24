@@ -2,7 +2,15 @@
   "name": "microbit-web-bridge",
   "version": "0.0.1",
   "private": true,
+  "deployConfig": {
+    "bucket": "energy-in-schools-media-bucket",
+    "region": "eu-west-2",
+    "stagingPath": "staging/webhub/",
+    "prodPath": "production/webhub/"
+  },
   "scripts": {
+    "deploy:prod": "cli-confirm \"You are going to deploy on PRODUCTION?\" && npm run build:prod && s3deploy -public-access -v -bucket $npm_package_deployConfig_bucket -region $npm_package_deployConfig_region -path $npm_package_deployConfig_prodPath -source dist/",
+    "deploy:staging": "cli-confirm \"You are going to deploy on STAGING?\" && npm run build:staging && s3deploy -public-access -v -bucket $npm_package_deployConfig_bucket -region $npm_package_deployConfig_region -path $npm_package_deployConfig_stagingPath -source dist/",
     "build:staging": "NODE_ENV=staging webpack --mode=production",
     "build:prod": "NODE_ENV=production webpack --mode=production",
     "build": "webpack --mode=development",
@@ -18,6 +26,7 @@
     "axios": "^0.18.0",
     "binary": "^0.3.0",
     "bufferpack": "0.0.6",
+    "cli-confirm": "^1.0.1",
     "cookie-parser": "^1.4.4",
     "dapjs": "^1.1.0",
     "date-and-time": "^0.6.3",

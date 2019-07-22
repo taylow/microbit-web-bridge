@@ -19,6 +19,8 @@ const loginButton = $('#loginButton');
 const logoutButton = $('#logout');
 const hubsSelect = $('#hubSelect');
 
+export const additionalInfo = $('#additionalInfo');
+
 const s = require('../stylesheets/style.css'); //css TODO replace
 
 let targetDevice: DAPLink;
@@ -260,6 +262,7 @@ connectButton.on('click', () => {
             })
             .then((message) => {
                 connectButton.text("Disconnect");
+                additionalInfo.text('Please, press on "reset" button till you see the smile face');
                 setStatus(message);
             })
             .catch((error) => {
@@ -283,6 +286,7 @@ flashButton.on('click', () => {
 
     selectDevice()
         .then((device: USBDevice) => {
+            additionalInfo.text('');
             return flashDevice(device)
         })
         .then((message) => {

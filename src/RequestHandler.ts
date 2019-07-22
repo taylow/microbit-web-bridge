@@ -4,6 +4,7 @@ import axios, {AxiosRequestConfig} from "axios";
 import dateTime from "date-time";
 import WeatherHubAPIService from "./api/weather";
 import logger from "../libs/logger";
+import { additionalInfo } from './WebBridge';
 
 export class RequestHandler {
     private readonly translations;
@@ -22,6 +23,7 @@ export class RequestHandler {
     public async handleRequest(serialPacket: SerialPacket): Promise<SerialPacket> {
         // if HELLO packet
         if (serialPacket.request_type === RequestType.REQUEST_TYPE_HELLO) {
+            additionalInfo.text('');
             return await this.handleHelloPacket(serialPacket);
 
             // if a REST request

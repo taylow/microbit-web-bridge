@@ -4,7 +4,7 @@ import axios, {AxiosRequestConfig} from "axios";
 import dateTime from "date-time";
 import WeatherHubAPIService from "./api/weather";
 import logger from "../libs/logger";
-import { additionalInfo } from './WebBridge';
+import { additionalInfo, deviceStatus } from './WebBridge';
 
 export class RequestHandler {
     private readonly translations;
@@ -23,6 +23,7 @@ export class RequestHandler {
     public async handleRequest(serialPacket: SerialPacket): Promise<SerialPacket> {
         // if HELLO packet
         if (serialPacket.request_type === RequestType.REQUEST_TYPE_HELLO) {
+            deviceStatus.CONNECTION_STATUS = true;
             additionalInfo.text('');
             return await this.handleHelloPacket(serialPacket);
 
@@ -567,6 +568,7 @@ export class RequestHandler {
             responsePacket.setRequestBit(RequestType.REQUEST_TYPE_HELLO);
             responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
             responsePacket.append(0); // append a 0 for OK
+
 
             resolve(responsePacket); // resolve the response packet to be sent to the bridge micro:bit
         });

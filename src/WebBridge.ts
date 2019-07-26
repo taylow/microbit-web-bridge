@@ -21,6 +21,11 @@ const logoutButton = $('#logout');
 const hubsSelect = $('#hubSelect');
 
 export const additionalInfo = $('#additionalInfo');
+export const deviceStatus: {
+  CONNECTION_STATUS: boolean
+} = {
+  CONNECTION_STATUS: false
+}
 
 const s = require('../stylesheets/style.css'); //css TODO replace
 
@@ -60,6 +65,7 @@ let hub_variables = {
         "reset_pause": 1000
     }
 };
+
 
 /***
  * Downloads translations from the url stored in the hub_variables JSON.
@@ -119,14 +125,14 @@ function selectDevice(): Promise<USBDevice> {
  */
 function checkConnection(): void {
   if (
-    additionalInfo.text().length &&
+    !deviceStatus.CONNECTION_STATUS &&
     numberOfConnectionAttempts < MAX_NUMBER_OF_CONNECTION_ATTEMPTS
   ) {
     targetDevice.setSerialBaudrate(hub_variables.dapjs.baud_rate);
     numberOfConnectionAttempts++;
   } else {
     //if we not get successful connection after MAX_NUMBER_OF_CONNECTION_ATTEMPTS times, show user error message
-    if (additionalInfo.text().length) {
+    if (!deviceStatus.CONNECTION_STATUS) {
       additionalInfo.text("Package getting error. Please reconnect device and try again");
     }
     numberOfConnectionAttempts = 0;

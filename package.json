@@ -20,7 +20,6 @@
     "testWithCoverage": "jest --coverage"
   },
   "dependencies": {
-    "@ekifvk/jpquery": "github:WinUP/jspath",
     "@types/jquery": "^3.3.29",
     "@types/jwt-decode": "^2.2.1",
     "axios": "^0.18.0",

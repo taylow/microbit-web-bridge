@@ -11,6 +11,7 @@ const DEFAULT_BAUD = 115200;
 const FLASH_PAGE_SIZE = 59;
 const DEFAULT_TRANSLATION_POLLING = 60000;
 const DEFAULT_STATUS = "Connect to a micro:bit to start the hub";
+const MAX_NUMBER_OF_CONNECTION_ATTEMPTS = 5;
 
 const statusText = $('#status');
 const connectButton = $('#connect');
@@ -19,12 +20,22 @@ const loginButton = $('#loginButton');
 const logoutButton = $('#logout');
 const hubsSelect = $('#hubSelect');
 
+export const additionalInfo = $('#additionalInfo');
+export const deviceStatus: {
+  CONNECTION_STATUS: boolean
+} = {
+  CONNECTION_STATUS: false
+}
+
 const s = require('../stylesheets/style.css'); //css TODO replace
 
 let targetDevice: DAPLink;
 let serialNumber: string;
 let serialHandler: SerialHandler;
 let selectedHubUID: string = "-1";
+let numberOfConnectionAttempts: number = 0;
+
+let interval: number;
 
 let hub_variables = {
     "authenticated": false,
@@ -54,6 +65,7 @@ let hub_variables = {
         "reset_pause": 1000
     }
 };
+
 
 /***
  * Downloads translations from the url stored in the hub_variables JSON.
@@ -106,6 +118,26 @@ function selectDevice(): Promise<USBDevice> {
                 reject(error);
             });
     });
+}
+
+/***
+ * Check is connection with device successful.
+ */
+function checkConnection(): void {
+  if (
+    !deviceStatus.CONNECTION_STATUS &&
+    numberOfConnectionAttempts < MAX_NUMBER_OF_CONNECTION_ATTEMPTS
+  ) {
+    targetDevice.setSerialBaudrate(hub_variables.dapjs.baud_rate);
+    numberOfConnectionAttempts++;
+  } else {
+    //if we not get successful connection after MAX_NUMBER_OF_CONNECTION_ATTEMPTS times, show user error message
+    if (!deviceStatus.CONNECTION_STATUS) {
+      additionalInfo.text("Package getting error. Please reconnect device and try again");
+    }
+    numberOfConnectionAttempts = 0;
+    clearInterval(interval);
+  }
 }
 
 /***
@@ -260,6 +292,8 @@ connectButton.on('click', () => {
             })
             .then((message) => {
                 connectButton.text("Disconnect");
+                additionalInfo.text('Please, wait till you see the smile face');
+                interval = window.setInterval(checkConnection, 1500);
                 setStatus(message);
             })
             .catch((error) => {
@@ -283,6 +317,7 @@ flashButton.on('click', () => {
 
     selectDevice()
         .then((device: USBDevice) => {
+            additionalInfo.text('');
             return flashDevice(device)
         })
         .then((message) => {

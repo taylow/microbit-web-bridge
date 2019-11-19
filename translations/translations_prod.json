@@ -1,0 +1,567 @@
+{
+    "version":1,
+    "init":{
+        "POST" : {
+            "apiPrefix":"set",
+            "microbitQueryString":"/%endpoint%/",
+            "endpoint":{
+                "schoolId":{
+                    "parameters":[
+                        {
+                            "name":"schoolid",
+                            "type":"string"
+                        }
+                    ],
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"result"
+                        }
+                    ]
+                },
+                "piId":{
+                    "parameters":[
+                        {
+                            "name":"piid",
+                            "type":"string"
+                        }
+                    ],
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"result"
+                        }
+                    ]
+                },
+                "reset":{
+                    "parameters":[
+                        {
+                            "name":"reset",
+                            "type":"string"
+                        }
+                    ],
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"result"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "shr":{
+        "GET" : {
+            "apiPrefix":"get",
+            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/%api_endpoint?=variables%/",
+            "microbitQueryString":"/%endpoint%/%unit?%/%location?%/",
+            "compulsoryParameters":[
+                {
+                    "name":"endpoint",
+                    "type":"string"
+                }
+            ],
+            "endpoint":{
+                "fDta":{
+                    "jspath": ".value",
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"data"
+                        }
+                    ]
+                }
+            }
+        },
+        "POST" : {
+            "apiPrefix":"set",
+            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/%api_endpoint?=variables%/",
+            "microbitQueryString":"/%endpoint%/",
+            "endpoint":{
+                "sDta":{
+                    "parameters":[
+                        {
+                            "name":"key",
+                            "type":"string",
+                            "compulsory": false
+                        },
+                        {
+                            "name":"value",
+                            "type":"string",
+                            "compulsory": true
+                        },
+                        {
+                            "name":"name",
+                            "type":"string",
+                            "compulsory": true
+                        },
+                        {
+                            "name":"level",
+                            "type":"int"
+                        }
+                    ],
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"result"
+                        }
+                    ]
+                },
+                "hDta":{
+                    "queryObject": {
+                        "api_endpoint": "historical-data"
+                    },
+                    "parameters":[
+                        {
+                            "name":"value",
+                            "type":"string",
+                            "compulsory": true
+                        },
+                        {
+                            "name":"name",
+                            "type":"string",
+                            "compulsory": true
+                        },
+                        {
+                            "name":"namespace",
+                            "type":"string",
+                            "compulsory": true
+                        },
+                        {
+                            "name":"unit",
+                            "type":"string",
+                            "compulsory": true
+                        }
+                    ],
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"result"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "iot":{
+        "GET" : {
+            "apiPrefix":"get",
+            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/devices/%device%/%api_endpoint%/",
+            "microbitQueryString":"/%endpoint%/%device?%",
+            "compulsoryParameters":[
+                {
+                    "name":"endpoint",
+                    "type":"string"
+                }
+            ],
+            "endpoint":{
+                "snSt":{
+                    "queryObject": {
+                        "api_endpoint": "motion-sensor",
+                        "device": "^device^"
+                    },
+                    "jspath": ".value",
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                },
+                "snTmp":{
+                    "queryObject": {
+                        "api_endpoint": "temperature-measurement",
+                        "device": "^device^"
+                    },
+                    "jspath": ".value",
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"temperature"
+                        }
+                    ]
+                },
+                "bSt":{
+                    "queryObject": {
+                        "api_endpoint": "switch",
+                        "device": "^device^"
+                    },
+                    "jspath": ".value",
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                },
+                "bLvl":{
+                    "queryObject": {
+                        "api_endpoint": "switch-level",
+                        "device": "^device^"
+                    },
+                    "jspath": ".value",
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                },
+                "bTmp":{
+                    "queryObject": {
+                        "api_endpoint": "color-temperature",
+                        "device": "^device^"
+                    },
+                    "jspath": ".value",
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                },
+                "bClr":{
+                    "queryObject": {
+                        "api_endpoint": "color-control",
+                        "device": "^device^"
+                    },
+                    "jspath": ".value",
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                },
+                "swSt":{
+                    "queryObject": {
+                        "api_endpoint": "switch",
+                        "device": "^device^"
+                    },
+                    "jspath": ".value",
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                }
+            }
+        },
+        "POST" : {
+            "apiPrefix":"set",
+            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/devices/%device%/%api_endpoint%/",
+            "microbitQueryString":"/%endpoint%/",
+            "endpoint":{
+                "bSt":{
+                    "queryObject": {
+                        "api_endpoint": "switch",
+                        "device": "^device^"
+                    },
+                    "parameters":[
+                        {
+                            "name":"bulbName",
+                            "type":"string"
+                        },
+                        {
+                            "name":"state",
+                            "type":"int"
+                        }
+                    ],
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                },
+                "bLvl":{
+                    "queryObject": {
+                        "api_endpoint": "switch-level",
+                        "device": "^device^"
+                    },
+                    "parameters":[
+                        {
+                            "name":"bulbName",
+                            "type":"string"
+                        },
+                        {
+                            "name":"level",
+                            "type":"int"
+                        }
+                    ],
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                },
+                "bTmp":{
+                    "queryObject": {
+                        "api_endpoint": "color-temperature",
+                        "device": "^device^"
+                    },
+                    "parameters":[
+                        {
+                            "name":"bulbName",
+                            "type":"string"
+                        },
+                        {
+                            "name":"colour",
+                            "type":"int"
+                        }
+                    ],
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                },
+                "bClr":{
+                    "queryObject": {
+                        "api_endpoint": "color-control",
+                        "device": "^device^"
+                    },
+                    "parameters":[
+                        {
+                            "name":"bulbName",
+                            "type":"string"
+                        },
+                        {
+                            "name":"colour",
+                            "type":"int"
+                        }
+                    ],
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                },
+                "swSt":{
+                    "queryObject": {
+                        "api_endpoint": "switch",
+                        "device": "^device^"
+                    },
+                    "parameters":[
+                        {
+                            "name":"switchName",
+                            "type":"string"
+                        },
+                        {
+                            "name":"state",
+                            "type":"int"
+                        }
+                    ],
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "nrg":{
+        "GET" : {
+            "apiPrefix":"get",
+            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/energy/consumption/?",
+            "microbitQueryString":"/%endpoint%/%unit?%/%location?%/%type?%/%period?%/%amount?%",
+            "compulsoryParameters":[
+                {
+                    "name":"endpoint",
+                    "type":"string"
+                }
+            ],
+            "endpoint":{
+                "nrgLvl":{
+                    "jspath": ".unit",
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"status"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "nrgMtr":{
+        "POST" : {
+            "apiPrefix":"send",
+            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/historical-data/",
+            "microbitQueryString":"/%endpoint%",
+            "queryObject":{
+                "namespace":"energy",
+                "name":"%name%",
+                "value":"%value%",
+                "type":"%type%",
+                "unit":"watt"
+            },
+            "headers":{
+                "pi-id":"%pi-id%",
+                "school-id":"%school-id%"
+            },
+            "endpoint":{
+                "nrgLvl":{
+                    "queryObject":{
+                        "namespace":"energy",
+                        "name":"%name%",
+                        "value":"%value%",
+                        "type":"%type%",
+                        "unit":"watt"
+                    },
+                    "parameters":[
+                        {
+                            "type":"string",
+                            "name":"name"
+                        },
+                        {
+                            "type":"int",
+                            "name":"value"
+                        },
+                        {
+                            "type":"int",
+                            "name":"type"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "wthr":{
+        "POST" : {
+            "apiPrefix":"get",
+            "baseURL":"https://energyinschools.co.uk/api/v1/micro-bit/weather/",
+            "microbitQueryString":""
+        }
+    },
+    "carbon":{
+        "GET" : {
+            "apiPrefix":"get",
+            "baseURL":"https://api.carbonintensity.org.uk/%api_endpoint?=intensity%",
+            "microbitQueryString":"/%endpoint%/%unit?%",
+            "compulsoryParameters":[
+                {
+                    "name":"endpoint",
+                    "type":"string"
+                }
+            ],
+            "endpoint":{
+                "index":{
+                    "jspath": ".data.intensity.index",
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"index"
+                        }
+                    ]
+                },
+                "value":{
+                    "jspath": ".data.intensity.actual",
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"value"
+                        }
+                    ]
+                },
+                "genmix":{
+                    "jspath": ".data.generationmix.{.fuel === '%unit%'}.perc",
+                    "queryObject": {
+                        "api_endpoint": "generation"
+                    },
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"level"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "iss":{
+        "GET" : {
+            "apiPrefix":"get",
+            "baseURL":"https://api.wheretheiss.at/v1/satellites/25544/",
+            "microbitQueryString":"/%endpoint%/%unit?%",
+            "compulsoryParameters":[
+                {
+                    "name":"endpoint",
+                    "type":"string"
+                }
+            ],
+            "endpoint":{
+                "name":{
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"data"
+                        }
+                    ]
+                },
+                "id":{
+                    "returns":[
+                        {
+                            "type":"int",
+                            "name":"data"
+                        }
+                    ]
+                },
+                "location":{
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"data"
+                        }
+                    ]
+                },
+                "solarlocation":{
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"data"
+                        }
+                    ]
+                },
+                "velocity":{
+                    "returns":[
+                        {
+                            "type":"int",
+                            "name":"data"
+                        }
+                    ]
+                },
+                "altitude":{
+                    "returns":[
+                        {
+                            "type":"int",
+                            "name":"data"
+                        }
+                    ]
+                },
+                "visibility":{
+                    "returns":[
+                        {
+                            "type":"string",
+                            "name":"data"
+                        }
+                    ]
+                },
+                "daynum":{
+                    "returns":[
+                        {
+                            "type":"int",
+                            "name":"data"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

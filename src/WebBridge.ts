@@ -1,16 +1,17 @@
-import * as $ from "jquery";
+import $ = require('jquery');
 import {DAPLink} from 'dapjs/lib/daplink';
 import {WebUSB} from 'dapjs/lib/transport/webusb';
-import {debug, DebugType} from "./Debug";
+import {terminalMsg} from "./Debug";
 import {SerialHandler} from "./SerialHandler";
 import AuthAPIService from "./api/login";
 import HubsAPIService from "./api/hubs";
-import axios from "axios";
+import logger from "../libs/logger";
 
 const DEFAULT_BAUD = 115200;
 const FLASH_PAGE_SIZE = 59;
 const DEFAULT_TRANSLATION_POLLING = 60000;
 const DEFAULT_STATUS = "Connect to a micro:bit to start the hub";
+const MAX_NUMBER_OF_CONNECTION_ATTEMPTS = 5;
 
 const statusText = $('#status');
 const connectButton = $('#connect');
@@ -19,10 +20,22 @@ const loginButton = $('#loginButton');
 const logoutButton = $('#logout');
 const hubsSelect = $('#hubSelect');
 
+export const additionalInfo = $('#additionalInfo');
+export const deviceStatus: {
+  CONNECTION_STATUS: boolean
+} = {
+  CONNECTION_STATUS: false
+}
+
+const s = require('../stylesheets/style.css'); //css TODO replace
+
 let targetDevice: DAPLink;
 let serialNumber: string;
 let serialHandler: SerialHandler;
 let selectedHubUID: string = "-1";
+let numberOfConnectionAttempts: number = 0;
+
+let interval: number;
 
 let hub_variables = {
     "authenticated": false,
@@ -46,12 +59,13 @@ let hub_variables = {
         "proxy_requests": true
     },
     "dapjs": {
-        "serial_delay": 100,
+        "serial_delay": 150,
         "baud_rate": 115200,
         "flash_timeout": 5000,
         "reset_pause": 1000
     }
 };
+
 
 /***
  * Downloads translations from the url stored in the hub_variables JSON.
@@ -61,7 +75,8 @@ async function getTranslations() {
     if (!hub_variables["translations"]["poll_updates"] && Object.entries(hub_variables["translations"]["json"]).length !== 0)
         return;
 
-    debug("Checking for translations updates", DebugType.DEBUG);
+    terminalMsg("Checking for translations updates");
+    logger.info("Checking for translations updates");
 
     $.ajax({
         url: hub_variables["translations"]["url"],
@@ -70,12 +85,12 @@ async function getTranslations() {
         cache: false,
         timeout: 10000,
         error: (error) => {
-            debug(`Error receiving translations`, DebugType.ERROR);
-            console.log(error);
+            terminalMsg(`Error receiving translations`);
+            logger.error(error);
         },
         success: (response) => {
             if (hub_variables["translations"]["json"] == {} || response["version"] != hub_variables["translations"]["json"]["version"]) {
-                debug(`Translations have updated! (v${response["version"]})`, DebugType.DEBUG);
+                terminalMsg(`Translations have updated! (v${response["version"]})`);
                 hub_variables["translations"]["json"] = response;
             }
         }
@@ -90,65 +105,39 @@ getTranslations();
 /***
  * Opens option to choose a webUSB device filtered using micro:bit's vendor ID.
  */
-function selectDevice(): Promise<string> {
+function selectDevice(): Promise<USBDevice> {
     setStatus("Select a device");
 
     return new Promise((resolve, reject) => {
         navigator.usb.requestDevice({
-            filters: [{vendorId: 0xD28}]
+            filters: [{vendorId: 0x0d28, productId: 0x0204}]
+        }).then((device) => {
+            resolve(device);
         })
-            .then((device) => {
-                connect(device, hub_variables.dapjs.baud_rate)
-                    .then((success) => {
-                        resolve("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
-                    })
-                    .catch((error) => {
-                        reject("Failed to connect to device");
-                    })
-            })
             .catch((error) => {
-                reject(DEFAULT_STATUS);
+                reject(error);
             });
     });
 }
 
 /***
- * Connect to given device with chosen baud rate and add listeners for receiving and disconnections.
- *
- * @param device WebUSB micro:bit instance
- * @param baud Baud rate for serial communication between micro:bit (usually 115200)
- * @returns {PromiseLike<T | never>}
+ * Check is connection with device successful.
  */
-function connect(device, baud: number) {
-    setStatus("Connecting...");
-
-    const transport = new WebUSB(device);
-    const target = new DAPLink(transport);
-
-    // create a SerialHandler to handle all serial communication
-    serialHandler = new SerialHandler(target, hub_variables, baud);
-
-    return target.connect()
-        .then(() => {
-            //setStatus("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
-            target.setSerialBaudrate(baud); // set the baud rate after connecting
-            serialNumber = device.serialNumber; // store serial number for comparison when disconnecting
-            return target.getSerialBaudrate();
-        })
-        .then(baud => {
-            target.startSerialRead(hub_variables.dapjs.serial_delay);
-            console.log(`Listening at ${baud} baud...`);
-            targetDevice = target;
-
-            /*targetDevice.reset();
-            // start a timeout check to see if hub authenticates or not for automatic flashing
-            setTimeout(() => {
-                if(!hub_variables.authenticated) {
-                    flashDevice(targetDevice);
-                }
-            }, hub_variables.dapjs.flash_timeout);*/
-        })
-        .catch(e => console.log(e));
+function checkConnection(): void {
+  if (
+    !deviceStatus.CONNECTION_STATUS &&
+    numberOfConnectionAttempts < MAX_NUMBER_OF_CONNECTION_ATTEMPTS
+  ) {
+    targetDevice.setSerialBaudrate(hub_variables.dapjs.baud_rate);
+    numberOfConnectionAttempts++;
+  } else {
+    //if we not get successful connection after MAX_NUMBER_OF_CONNECTION_ATTEMPTS times, show user error message
+    if (!deviceStatus.CONNECTION_STATUS) {
+      additionalInfo.text("Package getting error. Please reconnect device and try again");
+    }
+    numberOfConnectionAttempts = 0;
+    clearInterval(interval);
+  }
 }
 
 /***
@@ -175,39 +164,90 @@ function disconnect() {
         targetDevice.stopSerialRead();
         targetDevice.disconnect()
             .catch((e) => {
-                console.log(e);
-                console.log(ERROR_MESSAGE);
+                logger.error(e);
+                logger.error(ERROR_MESSAGE);
             });
     } catch (e) {
-        console.log(e);
-        console.log(ERROR_MESSAGE);
+        logger.error(e);
+        logger.error(ERROR_MESSAGE);
     }
 
     targetDevice = null; // destroy DAPLink
 }
 
-function downloadHex() {
-    return axios.get(`http://localhost:3000/hex`, {responseType: 'arraybuffer'})
-        .catch((error) => {
-            console.log("ERROR" + error);
-        });
+/**
+ * Connect to given device and add listeners for receiving and disconnections.
+ *
+ * @param device WebUSB micro:bit instance
+ * @returns {PromiseLike<string>}
+ */
+function connect(device: USBDevice): Promise<string> {
+    return new Promise((resolve, reject) => {
+        if (targetDevice) targetDevice.stopSerialRead();
+
+        // Connect to device
+        const transport = new WebUSB(device);
+        targetDevice = new DAPLink(transport);
+        serialNumber = device.serialNumber;
+
+        // Ensure disconnected
+        targetDevice.disconnect();
+
+        targetDevice.connect()
+            .then(() => targetDevice.setSerialBaudrate(hub_variables.dapjs.baud_rate))
+            .then(() => targetDevice.getSerialBaudrate())
+            .then(baud => {
+                targetDevice.startSerialRead(hub_variables.dapjs.serial_delay);
+                logger.info(`Listening at ${baud} baud...`);
+                serialHandler = new SerialHandler(targetDevice, hub_variables, baud);
+                resolve("Connected to " + (device.productName != "" ? device.productName : "micro:bit"));
+            })
+            .catch(err => {
+                logger.error(err);
+                reject(`Failed to connect : ${err}`);
+            });
+    });
 }
 
-function flashDevice(targetDevice: DAPLink) {
-    console.log("Downloading hub hex file");
+function flashDevice(device: USBDevice): Promise<string> {
+    return new Promise((resolve, reject) => {
+        hub_variables["authenticated"] = false;
+        hub_variables["school_id"] = "";
+        hub_variables["pi_id"] = "";
 
-    downloadHex().then((success) => {
-        console.log(success["data"]);
-        let program = new Uint8Array(success["data"]).buffer;
-        console.log(program);
+        if (targetDevice) targetDevice.stopSerialRead();
 
-        /*targetDevice.flash(program)
-            .then((success) => {
-                console.log(success);
-            })
-            .catch((error) => {
-                console.log(error);
-            });*/
+        HubsAPIService.getHubFirmware(selectedHubUID).then((firmware: ArrayBuffer) => {
+            // Connect to device
+            const transport = new WebUSB(device);
+            targetDevice = new DAPLink(transport);
+
+            // Ensure disconnected
+            targetDevice.disconnect();
+
+            // Event to monitor flashing progress
+            targetDevice.on(DAPLink.EVENT_PROGRESS, function (progress) {
+                setStatus(`Flashing: ${Math.round(progress * 100)}%`)
+            });
+
+            // Push binary to board
+            return targetDevice.connect()
+                .then(() => {
+                    logger.info("Flashing");
+                    return targetDevice.flash(firmware);
+                })
+                .then(() => {
+                    logger.info("Finished flashing! Reconnect micro:bit");
+                    resolve("Finished flashing! Reconnect micro:bit");
+                    return targetDevice.disconnect();
+                })
+                .catch((e) => {
+                    reject("Error flashing: " + e);
+                    logger.error("Error flashing: " + e);
+                })
+        }).catch(() => {
+            reject("Failed to get hub firmware")
+        })
     });
 }
 
@@ -246,9 +286,15 @@ navigator.usb.addEventListener('disconnect', (device) => {
 connectButton.on('click', () => {
     if (connectButton.text() == "Connect") {
         selectDevice()
-            .then((success) => {
+            .then((device: USBDevice) => {
+                setStatus("Connecting...");
+                return connect(device);
+            })
+            .then((message) => {
                 connectButton.text("Disconnect");
-                setStatus(success);
+                additionalInfo.text('Please, wait till you see the smile face');
+                interval = window.setInterval(checkConnection, 1500);
+                setStatus(message);
             })
             .catch((error) => {
                 setStatus(error);
@@ -268,25 +314,18 @@ flashButton.on('click', () => {
         alert("Hub firmware should be selected!");
         return
     }
-    if (!targetDevice) {
-        alert("Microbit is not connected!");
-        return
-    }
 
-    hub_variables["authenticated"] = false;
-    hub_variables["school_id"] = "";
-    hub_variables["pi_id"] = "";
-
-    HubsAPIService.getHubFirmware(selectedHubUID).then((firmware: ArrayBuffer) => {
-        targetDevice.flash(firmware, FLASH_PAGE_SIZE).then((result) => {
-            targetDevice.reconnect();
-            alert("Flashed successfully! You need to reconnect device before using")
-            disconnect()
-        }).catch((error) => {
-            console.log(error);
-            alert("Flashing error")
+    selectDevice()
+        .then((device: USBDevice) => {
+            additionalInfo.text('');
+            return flashDevice(device)
         })
-    });
+        .then((message) => {
+            setStatus(message);
+        })
+        .catch((error) => {
+            setStatus(error);
+        });
 });
 
 /**
@@ -314,7 +353,7 @@ loginButton.on('click', () => {
 });
 
 hubsSelect.on('change', function () {
-    selectedHubUID = this.value;
+    selectedHubUID = (this as HTMLInputElement).value;
 });
 
 /**

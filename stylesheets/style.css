@@ -19,7 +19,8 @@ h1 {
     text-align: center;
 }
 
-#status {
+#status,
+#additionalInfo {
     text-align: center;
     width: 50%;
     margin: auto;
@@ -30,7 +31,8 @@ h1 {
 }
 
 @media (max-width: 480px) {
-    #status {
+    #status,
+    #additionalInfo {
         font-size: 16px;
     }
 }

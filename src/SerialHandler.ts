@@ -1,8 +1,9 @@
-import {DAPLink} from "dapjs";
+import {DAPLink} from 'dapjs/lib/daplink';
 import {RequestStatus, RequestType, SerialPacket, SlipChar} from "./SerialPacket";
-import {debug, DebugType} from "./Debug";
 import {RequestHandler} from "./RequestHandler";
 import {DEBUG} from "./constants/Config";
+import {terminalMsg} from "./Debug";
+import logger from "../libs/logger";
 
 export class SerialHandler {
     private targetDevice: DAPLink;
@@ -40,17 +41,49 @@ export class SerialHandler {
      * Adds an event listener to the DAPLink target to listen to serial events and process the data
      */
     private async setupSerialHandler() {
-        this.targetDevice.on(DAPLink.EVENT_SERIAL_DATA, data => {
+        this.targetDevice.on(DAPLink.EVENT_SERIAL_DATA, async (raw_data) => {
             // if serial handling is paused, dont perform any actions
             if(this.isPaused)
                 return;
 
-            if (data.search(String.fromCharCode(SlipChar.SLIP_END)) === -1 || data.charCodeAt(0) !== 0) {
+            if (raw_data.search(String.fromCharCode(SlipChar.SLIP_END)) === -1 || raw_data.charCodeAt(0) !== 0 ) {
                 return;
             }
 
+            // DEAL with SLIP Chars
+            let data = '';
+
+            for (let i = 0; i < raw_data.length; i++) {
+                let c = raw_data.charCodeAt(i);
+
+                if (c === SlipChar.SLIP_END){
+                    data += String.fromCharCode(c);
+                    break
+                }
+                
+                if (c === SlipChar.SLIP_ESC){
+                    let next = raw_data.charCodeAt(i + 1);
+
+                    if (next === SlipChar.SLIP_ESC_END) {
+                        data += String.fromCharCode(SlipChar.SLIP_END)
+                    } else if (next === SlipChar.SLIP_ESC_ESC) {
+                        data += String.fromCharCode(SlipChar.SLIP_ESC)
+                    } else {
+                        data += String.fromCharCode(c);
+                        data += String.fromCharCode(next);
+                    }
+
+                    i += 1;
+
+                    continue;
+                }
+
+                data += String.fromCharCode(c);
+            }
+
             this.packetCount++;
-            debug(`Packet count: ${this.packetCount}`, DebugType.DEBUG);
+            terminalMsg(`Packet count: ${this.packetCount}`);
+            logger.debug(`Packet count: ${this.packetCount}`);
 
             let serialPacket: SerialPacket;
 
@@ -59,38 +92,26 @@ export class SerialHandler {
                 serialPacket = SerialPacket.dataToSerialPacket(data); // convert the data to a SerialPacket
 
                 if(DEBUG) {
-                    console.log("Input Packet: ");
+                    logger.debug("Input Packet:", data);
 
                     let rawPacket = [];
                     for (let i = 0; i < data.length; i++) {
                         rawPacket.push(data.charCodeAt(i));
                     }
-                    console.log(data);
-                    console.log(rawPacket);
-                    console.log(serialPacket);
+                    logger.debug("Serial packet:", serialPacket);
                 }
 
                 // handle the request and await the promised resolve packet or reason for error
-                requestHandler.handleRequest(serialPacket)
-                    .then((responsePacket) => {
-                        responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
-                        this.write(responsePacket);
-                    })
-                    .catch((reason) => {
-                        debug(`${reason}`, DebugType.ERROR);
-
-                        // clear all data from input packet and return it as an error packet
-                        let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespaceID(), serialPacket.getUID(), serialPacket.getReqRes());
-                        responsePacket.clearAndError(reason);
-                        this.write(responsePacket);
-                    });
+                let responsePacket = await requestHandler.handleRequest(serialPacket)
+                responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
+                await this.write(responsePacket);
             } catch (e) {
-                console.log(e);
-
-                // clear serial packet and try to send an error response
-                serialPacket.clearAndError("ERROR");
-                this.write(serialPacket);
-            }
+                logger.error(e);
+                // clear all data from input packet and return it as an error packet
+                let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespaceID(), serialPacket.getUID(), serialPacket.getReqRes());
+                responsePacket.clearAndError("ERROR");
+                await this.write(responsePacket);
+            } 
         });
     }
 
@@ -101,17 +122,15 @@ export class SerialHandler {
      */
     public async sendSerialPacket(serialPacket: SerialPacket) {
         if(DEBUG) {
-            console.log("Output Packet");
-            console.log(serialPacket);
-            console.log(serialPacket.getFormattedPacket());
+            logger.debug("Output Packet (raw):", serialPacket);
         }
 
         let packet = String.fromCharCode(...serialPacket.getFormattedPacket());
 
         try {
-            await this.targetDevice.serialWrite(packet);
+            return await this.targetDevice.serialWrite(packet);
         } catch(e) {
-            console.log(e);
+            logger.error(e);
         }
     }
 

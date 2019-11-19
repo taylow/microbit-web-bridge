@@ -1,9 +1,10 @@
 import * as jspath from "jspath";
 import {RequestStatus, RequestType, SerialPacket} from "./SerialPacket";
-import {debug, DebugType} from "./Debug";
 import axios, {AxiosRequestConfig} from "axios";
 import dateTime from "date-time";
 import WeatherHubAPIService from "./api/weather";
+import logger from "../libs/logger";
+import { additionalInfo, deviceStatus } from './WebBridge';
 
 export class RequestHandler {
     private readonly translations;
@@ -22,6 +23,8 @@ export class RequestHandler {
     public async handleRequest(serialPacket: SerialPacket): Promise<SerialPacket> {
         // if HELLO packet
         if (serialPacket.request_type === RequestType.REQUEST_TYPE_HELLO) {
+            deviceStatus.CONNECTION_STATUS = true;
+            additionalInfo.text('');
             return await this.handleHelloPacket(serialPacket);
 
             // if a REST request
@@ -88,23 +91,18 @@ export class RequestHandler {
 
     private processRESTRequest(serialPacket: SerialPacket, responsePacket: SerialPacket, translation: any[], requestType: string): Promise<SerialPacket> {
         try {
-            // console.log(translation);
 
             // gets the format for the micro:bit query string
             let mbQueryString = translation[requestType]["microbitQueryString"]; // get microbitQueryString from translation
-            //console.log(mbQueryString);
 
             // maps the query string coming from the micro:bit to the translated format
             let queryStrMap = this.mapQueryString(serialPacket.get(0), mbQueryString);
-            console.log(queryStrMap);
 
             // gets the baseURL for the specified service
             let baseURL = translation[requestType]["baseURL"];
-            console.log(baseURL);
 
             // gets the endpoint json
             let endpoint = queryStrMap["endpoint"] ? translation[requestType]["endpoint"][queryStrMap["endpoint"]] : {};
-            console.log(endpoint);
 
             // gets the queryObject for the specified endpoint
             let queryObject = endpoint["queryObject"];
@@ -134,12 +132,13 @@ export class RequestHandler {
                 }
             }
 
-            debug(`Service: ${queryStrMap["service"].toUpperCase()}`, DebugType.DEBUG);
+            logger.debug(`Service: ${queryStrMap["service"].toUpperCase()}`);
+            logger.debug('Query string map', queryStrMap);
 
             return this.temporaryTranslation(queryStrMap, newURL, endpoint, responsePacket, serialPacket, requestType);
 
         } catch(e) {
-            console.log(e);
+            logger.error(e);
             return new Promise((resolve, reject) => {
                 reject("REST REQUEST ERROR");
             });
@@ -169,10 +168,14 @@ export class RequestHandler {
 
             // handles all services currently supported by the translations file
             switch (queryStrMap["service"]) {
-                case "share": // SHARE PACKAGE
-                    if (queryStrMap["endpoint"] == "fetchData") {
+                case "shr": // SHARE PACKAGE
+                    if (queryStrMap["endpoint"] == "fDta") {
                         try {
-                            url = url + queryStrMap["unit"]; // append unit to the end of the URL
+                            url += `${queryStrMap["unit"]}/`; // append unit to the end of the URL
+
+                            if (queryStrMap["location"] !== "local") {
+                                url += `school/${queryStrMap["location"]}/`
+                            }
 
                             // request the data
                             axios.get(url, {headers: headers})
@@ -183,14 +186,14 @@ export class RequestHandler {
                                     resolve(responsePacket);
                                 })
                                 .catch((error) => {
-                                    console.log("ERROR" + error);
+                                    logger.error("ERROR" + error);
                                     reject("COULD NOT GET VARIABLE");
                                     return;
                                 });
                         } catch (e) {
                             reject("COULD NOT GET VARIABLE");
                         }
-                    } else if (queryStrMap["endpoint"] == "shareData") {
+                    } else if (queryStrMap["endpoint"] == "sDta") {
                         try {
                             let jsonData = {
                                 "key": serialPacket.get(2),
@@ -198,7 +201,7 @@ export class RequestHandler {
                                 "share_with": (serialPacket.get(3) ? "SCHOOL" : "ALL")
                             };
 
-                            axios.post(`${url}${serialPacket.get(2)}`, jsonData, {headers: headers})
+                            axios.post(`${url}${serialPacket.get(2)}/`, jsonData, {headers: headers})
                                 .then((success) => {
                                     responsePacket.append("DATA SENT");
                                     resolve(responsePacket);
@@ -209,7 +212,7 @@ export class RequestHandler {
                         } catch (e) {
                             reject("COULD NOT SHARE DATA");
                         }
-                    } else if (queryStrMap["endpoint"] == "historicalData") {
+                    } else if (queryStrMap["endpoint"] == "hDta") {
                         try {
                             let jsonData = {
                                 "namespace": serialPacket.get(3),
@@ -242,7 +245,7 @@ export class RequestHandler {
                         try {
                             url = url.replace("^device^", serialPacket.get(1)); // replace "^device^ with the device from the serialPacket
 
-                            if (queryStrMap["endpoint"] == "bulbState" || queryStrMap["endpoint"] == "switchState")
+                            if (queryStrMap["endpoint"] == "bSt" || queryStrMap["endpoint"] == "swSt")
                                 jsonData.value = serialPacket.get(2) == 0 ? "off" : "on"; // set value to on/off from 0/1
                             else
                                 jsonData.value = String(serialPacket.get(2)); // set value to the value in the serialPacket
@@ -290,12 +293,12 @@ export class RequestHandler {
                         }
                     }
                     break;
-                case "energy":
+                case "nrg":
                     try {
                         let fromDate = new Date();
                         let toDate = new Date();
 
-                        if (queryStrMap["endpoint"] == "energyLevel") {
+                        if (queryStrMap["endpoint"] == "nrgLvl") {
                             if (queryStrMap["unit"] == 0)
                                 url += "energy_type=ELECTRICITY";
                             else if (queryStrMap["unit"] == 1)
@@ -350,7 +353,7 @@ export class RequestHandler {
                         reject("COULD NOT GET ENERGY USAGE");
                     }
                     break;
-                case "energyMeter":
+                case "nrgMtr":
                     try {
                         let jsonData = {
                             "namespace": endpoint["queryObject"]["namespace"],
@@ -360,22 +363,20 @@ export class RequestHandler {
                             "value": Number(serialPacket.get(2))
                         };
 
-                        console.log(jsonData);
-
                         axios.post(`${url}`, jsonData, {headers: headers})
                             .then((success) => {
                                 responsePacket.append("DATA SENT");
                                 resolve(responsePacket);
                             })
                             .catch((error) => {
-                                console.log(error);
+                                logger.error(error);
                                 reject("COULD NOT SHARE DATA");
                             });
                     } catch (e) {
                         reject("COULD NOT SHARE DATA");
                     }
                     break;
-                case "weather":
+                case "wthr":
                     const weatherAPIService = new WeatherHubAPIService(schoolID, hubID);
                     const end_point = serialPacket.get(0);
                     const location = serialPacket.get(2);
@@ -384,16 +385,16 @@ export class RequestHandler {
                         [isForCity ? 'city': 'postal_code']: location,
                     };
                     let request = weatherAPIService.getCurrentWeather;
-                    if (end_point === '/weather/forecastTomorrow/') {
+                    if (end_point === '/wthr/tmrw/') {
                         request = weatherAPIService.getTomorrowWeather;
                     }
                     request(queryParams).then((weather) => {
-                        if (end_point === '/weather/temperature/') {
+                        if (end_point === '/wthr/tmpr/') {
                             responsePacket.append(weather.temperature.average.toString());
-                        } else if (end_point === '/weather/wind/') {
+                        } else if (end_point === '/wthr/wnd/') {
                             const degree = weather.wind.degree && this.degToCompass(weather.wind.degree);
                             responsePacket.append(degree)
-                        } else if (end_point === '/weather/forecastNow/' || end_point === '/weather/forecastTomorrow/') {
+                        } else if (end_point === '/wthr/now/' || end_point === '/wthr/tmrw/') {
                             responsePacket.append(weather.detailed_status);
                         }
                         resolve(responsePacket);
@@ -406,10 +407,7 @@ export class RequestHandler {
                         try {
                             axios.get(`${url}`)
                                 .then((success) => {
-                                    console.log(success);
-
                                     let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-
                                     responsePacket.append(data);
                                     resolve(responsePacket);
                                 })
@@ -423,10 +421,7 @@ export class RequestHandler {
                         try {
                             axios.get(`${url}`)
                                 .then((success) => {
-                                    console.log(success);
-
                                     let data = String(jspath.apply(endpoint["jspath"], success.data)[0]);
-
                                     responsePacket.append(data);
                                     resolve(responsePacket);
                                 })
@@ -440,11 +435,7 @@ export class RequestHandler {
                         try {
                             axios.get(`${url}`)
                                 .then((success) => {
-                                    console.log(success);
                                     let data = String(jspath.apply(endpoint["jspath"].replace("%unit%", queryStrMap["unit"]), success.data)[0]);
-
-                                    console.log(data);
-
                                     responsePacket.append(data);
                                     resolve(responsePacket);
                                 })
@@ -469,7 +460,7 @@ export class RequestHandler {
      * @param serialPacket Incoming serial packet (REST REQUEST)
      */
     private handleRESTRequest(serialPacket: SerialPacket): Promise<SerialPacket> {
-        debug(`REST REQUEST PACKET`, DebugType.DEBUG);
+        logger.debug("Received REST packet")
         try {
             let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespaceID(), serialPacket.getUID());
             let queryPieces = serialPacket.get(0).split('/').filter(x => x);
@@ -506,7 +497,7 @@ export class RequestHandler {
 
             return this.processRESTRequest(serialPacket, responsePacket, translation, requestType);
         } catch(e) {
-            console.log(e);
+            logger.error(e);
             return new Promise((resolve, reject) => {
                 reject("REST PACKET ERROR");
             });
@@ -545,8 +536,8 @@ export class RequestHandler {
      */
     private handleHelloPacket(serialPacket: SerialPacket): Promise<SerialPacket> {
         return new Promise((resolve, reject) => {
-            debug(`HELLO PACKET`, DebugType.DEBUG);
-            debug(`School_ID: ${serialPacket.get(1)} hub_id: ${serialPacket.get(2)}`, DebugType.DEBUG);
+            logger.debug(`Received HELLO PACKET`);
+            logger.debug(`School_ID: ${serialPacket.get(1)} hub_id: ${serialPacket.get(2)}`);
 
             let responsePacket = new SerialPacket(serialPacket.getAppID(), serialPacket.getNamespaceID(), serialPacket.getUID());
 
@@ -577,6 +568,7 @@ export class RequestHandler {
             responsePacket.setRequestBit(RequestType.REQUEST_TYPE_HELLO);
             responsePacket.setRequestBit(RequestStatus.REQUEST_STATUS_OK);
             responsePacket.append(0); // append a 0 for OK
+
 
             resolve(responsePacket); // resolve the response packet to be sent to the bridge micro:bit
         });

@@ -1,5 +1,5 @@
 import * as _ from "lodash";
-import * as jwtdecode from 'jwt-decode';
+import jwtdecode from 'jwt-decode';
 import axios from 'axios';
 import {API_ENDPOINT, RoleNames} from "../constants/Config";
 
@@ -8,6 +8,8 @@ export class AbstractApiService {
   static ACCESS_TOKEN_PARAM = 'access';
 
   static REFRESH_TOKEN_PARAM = 'refresh';
+
+  static EIS_TOKEN_PARAM = 'apiAuth';
 
   static UNAUTHORIZED_CODE = 401; // Default unauthorized code
 
@@ -111,7 +113,11 @@ export class AbstractApiService {
   }
 
   get AccessToken() {
-    return localStorage.getItem(AbstractApiService.ACCESS_TOKEN_PARAM);
+    try {
+      return JSON.parse(localStorage.getItem(AbstractApiService.EIS_TOKEN_PARAM))[AbstractApiService.ACCESS_TOKEN_PARAM]
+    } catch (e) {
+      return localStorage.getItem(AbstractApiService.ACCESS_TOKEN_PARAM);
+    }
   }
 
   set AccessToken(value) {
@@ -130,13 +136,14 @@ export class AbstractApiService {
     if (!this.AccessToken) {
       throw new Error("No access token")
     }
-    const role: string = jwtdecode(this.AccessToken).role;
+    const role: string = jwtdecode(this.AccessToken)['role'];
     return RoleNames[role.toUpperCase()];
   }
 
   cleanTokens() {
     localStorage.removeItem(AbstractApiService.ACCESS_TOKEN_PARAM);
     localStorage.removeItem(AbstractApiService.REFRESH_TOKEN_PARAM)
+    localStorage.removeItem(AbstractApiService.EIS_TOKEN_PARAM)
   }
 }
 

@@ -50,7 +50,7 @@
             }
         }
     },
-    "share":{
+    "shr":{
         "GET" : {
             "apiPrefix":"get",
             "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/%api_endpoint?=variables%/",
@@ -62,7 +62,7 @@
                 }
             ],
             "endpoint":{
-                "fetchData":{
+                "fDta":{
                     "jspath": ".value",
                     "returns":[
                         {
@@ -78,7 +78,7 @@
             "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/%api_endpoint?=variables%/",
             "microbitQueryString":"/%endpoint%/",
             "endpoint":{
-                "shareData":{
+                "sDta":{
                     "parameters":[
                         {
                             "name":"key",
@@ -107,7 +107,7 @@
                         }
                     ]
                 },
-                "historicalData":{
+                "hDta":{
                     "queryObject": {
                         "api_endpoint": "historical-data"
                     },
@@ -155,9 +155,9 @@
                 }
             ],
             "endpoint":{
-                "sensorState":{
+                "snSt":{
                     "queryObject": {
-                        "api_endpoint": "motion",
+                        "api_endpoint": "motion-sensor",
                         "device": "^device^"
                     },
                     "jspath": ".value",
@@ -168,9 +168,9 @@
                         }
                     ]
                 },
-                "sensorTemp":{
+                "snTmp":{
                     "queryObject": {
-                        "api_endpoint": "temperature",
+                        "api_endpoint": "temperature-measurement",
                         "device": "^device^"
                     },
                     "jspath": ".value",
@@ -181,11 +181,12 @@
                         }
                     ]
                 },
-                "bulbState":{
+                "bSt":{
                     "queryObject": {
                         "api_endpoint": "switch",
                         "device": "^device^"
                     },
+                    "jspath": ".value",
                     "returns":[
                         {
                             "type":"string",
@@ -193,11 +194,12 @@
                         }
                     ]
                 },
-                "bulbLevel":{
+                "bLvl":{
                     "queryObject": {
                         "api_endpoint": "switch-level",
                         "device": "^device^"
                     },
+                    "jspath": ".value",
                     "returns":[
                         {
                             "type":"string",
@@ -205,11 +207,12 @@
                         }
                     ]
                 },
-                "bulbTemp":{
+                "bTmp":{
                     "queryObject": {
                         "api_endpoint": "color-temperature",
                         "device": "^device^"
                     },
+                    "jspath": ".value",
                     "returns":[
                         {
                             "type":"string",
@@ -217,11 +220,12 @@
                         }
                     ]
                 },
-                "bulbColour":{
+                "bClr":{
                     "queryObject": {
                         "api_endpoint": "color-control",
                         "device": "^device^"
                     },
+                    "jspath": ".value",
                     "returns":[
                         {
                             "type":"string",
@@ -229,11 +233,12 @@
                         }
                     ]
                 },
-                "switchState":{
+                "swSt":{
                     "queryObject": {
                         "api_endpoint": "switch",
                         "device": "^device^"
                     },
+                    "jspath": ".value",
                     "returns":[
                         {
                             "type":"string",
@@ -248,7 +253,7 @@
             "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/devices/%device%/%api_endpoint%/",
             "microbitQueryString":"/%endpoint%/",
             "endpoint":{
-                "bulbState":{
+                "bSt":{
                     "queryObject": {
                         "api_endpoint": "switch",
                         "device": "^device^"
@@ -270,7 +275,7 @@
                         }
                     ]
                 },
-                "bulbLevel":{
+                "bLvl":{
                     "queryObject": {
                         "api_endpoint": "switch-level",
                         "device": "^device^"
@@ -292,7 +297,7 @@
                         }
                     ]
                 },
-                "bulbTemp":{
+                "bTmp":{
                     "queryObject": {
                         "api_endpoint": "color-temperature",
                         "device": "^device^"
@@ -314,7 +319,7 @@
                         }
                     ]
                 },
-                "bulbColour":{
+                "bClr":{
                     "queryObject": {
                         "api_endpoint": "color-control",
                         "device": "^device^"
@@ -336,7 +341,7 @@
                         }
                     ]
                 },
-                "switchState":{
+                "swSt":{
                     "queryObject": {
                         "api_endpoint": "switch",
                         "device": "^device^"
@@ -361,7 +366,7 @@
             }
         }
     },
-    "energy":{
+    "nrg":{
         "GET" : {
             "apiPrefix":"get",
             "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/energy/consumption/?",
@@ -385,7 +390,7 @@
             }
         }
     },
-    "energyMeter":{
+    "nrgMtr":{
         "POST" : {
             "apiPrefix":"send",
             "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/historical-data/",
@@ -402,7 +407,7 @@
                 "school-id":"%school-id%"
             },
             "endpoint":{
-                "energyLevel":{
+                "nrgLvl":{
                     "queryObject":{
                         "namespace":"energy",
                         "name":"%name%",
@@ -428,7 +433,7 @@
             }
         }
     },
-    "weather":{
+    "wthr":{
         "POST" : {
             "apiPrefix":"get",
             "baseURL":"https://staging.energyinschools.co.uk/api/v1/micro-bit/weather/",

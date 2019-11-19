@@ -1,6 +1,6 @@
 import {Packet} from "./Packet";
-import {debug, DebugType} from "./Debug";
 import {unpack, pack} from 'bufferpack';
+import logger from "../libs/logger";
 
 export enum SubType {
     SUBTYPE_STRING = 0x01,
@@ -150,7 +150,7 @@ export class SerialPacket implements Packet {
 
                 default:
                     //TODO: Implement Events
-                    debug(`FOUND UNIMPLEMENTED SUBTYPE WHILE ENCODING PACKET ${typeof value} (${value})`, DebugType.WARNING);
+                    logger.warn(`FOUND UNIMPLEMENTED SUBTYPE WHILE ENCODING PACKET ${typeof value} (${value})`);
             }
         }
         return formattedPayload;
@@ -286,7 +286,7 @@ export class SerialPacket implements Packet {
         let offset = 0;
 
         // grab subtype and the remainder of the packet
-        let subtype = unpack("b", rawPayload);
+        let subtype = unpack("b", rawPayload, 0);
         let remainder = rawPayload.slice(1);
 
         // compare against each subtype and process the data accordingly
@@ -327,6 +327,7 @@ export class SerialPacket implements Packet {
 
         // unpack header using header structure
         header = unpack(HEADER_STRUCTURE, bytes.slice(0, HEADER_LENGTH));
+
         payload = bytes.slice(HEADER_LENGTH);
 
         // create packet using the header bytes and the payload data

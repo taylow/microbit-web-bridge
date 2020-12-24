@@ -16,7 +16,7 @@
     "bufferpack": "0.0.6",
     "cookie-parser": "^1.4.4",
     "dapjs": "github:ARMmbed/dapjs#gh-pages",
-    "date-and-time": "^0.6.3",
+    "date-and-time": "^0.14.2",
     "date-time": "^3.0.0",
     "debug": "~2.6.9",
     "del": "^3.0.0",
